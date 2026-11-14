@@ -174,5 +174,5 @@
     "dart.previewFlutterUiGuidesCustomTracking": true,
     // Todo Tree busca ripgrep en la ruta antigua de VS Code (@vscode/ripgrep); ahora viene en @vscode/ripgrep-universal
     "todo-tree.ripgrep.ripgrep": "/Applications/Visual Studio Code.app/Contents/Resources/app/node_modules.asar.unpacked/@vscode/ripgrep-universal/bin/{{RG_ARCH}}/rg",
-    "workbench.colorTheme": "Islands Dark (IntelliJ)"
+    "workbench.colorTheme": "Islands Dark (código VS Code)"
 }
