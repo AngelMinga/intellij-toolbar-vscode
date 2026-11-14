@@ -1,0 +1,140 @@
+{
+  "name": "intellij-toolbar",
+  "displayName": "IntelliJ Toolbar",
+  "description": "Barra estilo IntelliJ: proyectos recientes, menú de ramas, device Flutter, configuración, Run y Debug.",
+  "version": "0.5.1",
+  "publisher": "angelminga",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/AngelMinga/intellij-toolbar-vscode.git"
+  },
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "ijt.projects",
+        "title": "Proyectos recientes",
+        "icon": "$(folder-library)"
+      },
+      {
+        "command": "ijt.branch",
+        "title": "Ramas y acciones Git",
+        "icon": "$(git-branch)"
+      },
+      {
+        "command": "ijt.device",
+        "title": "Seleccionar device",
+        "icon": "$(device-mobile)"
+      },
+      {
+        "command": "ijt.config",
+        "title": "Seleccionar configuración",
+        "icon": "$(settings-gear)"
+      },
+      {
+        "command": "ijt.run",
+        "title": "Run",
+        "icon": "$(play)"
+      },
+      {
+        "command": "ijt.debug",
+        "title": "Debug",
+        "icon": "$(debug-alt)"
+      },
+      {
+        "command": "ijt.stop",
+        "title": "Stop",
+        "icon": "$(debug-stop)"
+      },
+      {
+        "command": "ijt.hotRestart",
+        "title": "Hot Restart",
+        "icon": "$(debug-restart)"
+      },
+      {
+        "command": "ijt.hotReload",
+        "title": "Hot Reload",
+        "icon": "$(zap)"
+      },
+      {
+        "command": "ijt.more",
+        "title": "Más acciones (Flutter / Run)",
+        "icon": "$(kebab-vertical)"
+      }
+    ],
+    "menus": {
+      "editor/title": [
+        {
+          "command": "ijt.projects",
+          "group": "navigation@0",
+          "when": "config.intellijToolbar.editorTitleButtons"
+        },
+        {
+          "command": "ijt.branch",
+          "group": "navigation@1",
+          "when": "config.intellijToolbar.editorTitleButtons && config.intellijToolbar.showBranch"
+        },
+        {
+          "command": "ijt.device",
+          "group": "navigation@2",
+          "when": "config.intellijToolbar.editorTitleButtons && config.intellijToolbar.showDevice"
+        },
+        {
+          "command": "ijt.config",
+          "group": "navigation@3",
+          "when": "config.intellijToolbar.editorTitleButtons"
+        },
+        {
+          "command": "ijt.run",
+          "group": "navigation@4",
+          "when": "config.intellijToolbar.editorTitleButtons && !inDebugMode"
+        },
+        {
+          "command": "ijt.debug",
+          "group": "navigation@5",
+          "when": "config.intellijToolbar.editorTitleButtons && !inDebugMode"
+        },
+        {
+          "command": "ijt.hotRestart",
+          "group": "navigation@4",
+          "when": "config.intellijToolbar.editorTitleButtons && inDebugMode"
+        },
+        {
+          "command": "ijt.stop",
+          "group": "navigation@5",
+          "when": "config.intellijToolbar.editorTitleButtons && inDebugMode"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "IntelliJ Toolbar",
+      "properties": {
+        "intellijToolbar.showBranch": {
+          "type": "boolean",
+          "default": true,
+          "description": "Mostrar el botón de rama Git."
+        },
+        "intellijToolbar.showDevice": {
+          "type": "boolean",
+          "default": true,
+          "description": "Mostrar el selector de device Flutter."
+        },
+        "intellijToolbar.editorTitleButtons": {
+          "type": "boolean",
+          "default": false,
+          "description": "Mostrar también los botones como íconos en la barra del editor (no hace falta si usas titlebar-inject.js)."
+        }
+      }
+    }
+  }
+}
