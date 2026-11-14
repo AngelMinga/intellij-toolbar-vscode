@@ -2,6 +2,7 @@
 alefragnani.bookmarks
 anthropic.claude-code
 be5invis.vscode-custom-css
+chadalen.vscode-jetbrains-icon-theme
 cstef.kotlin-formatter
 dart-code.dart-code
 dart-code.flutter

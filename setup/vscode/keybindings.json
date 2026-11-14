@@ -110,6 +110,12 @@
     { "key": "shift+cmd+e", "command": "workbench.action.navigateBackInEditLocations" },
     // Search Everywhere (doble Shift): el mismo panel que la lupa de la barra.
     { "key": "shift shift", "command": "workbench.action.quickOpenWithModes" },
+    // Quick Definition (⌘Y), Copy Reference (⇧⌥⌘C) y Scratch File (⇧⌘N), como IntelliJ.
+    { "key": "cmd+y", "command": "editor.action.peekDefinition", "when": "editorHasDefinitionProvider && editorTextFocus" },
+    { "key": "alt+shift+cmd+c", "command": "copyRelativeFilePath" },
+    { "key": "shift+cmd+n", "command": "workbench.action.files.newUntitledFile" },
+    // Local History (⌥⌘H): historial del archivo actual (Timeline), aunque no haya commit.
+    { "key": "alt+cmd+h", "command": "timeline.focus" },
     // Run Anything (doble ⌃): tareas del proyecto (.vscode/tasks.json).
     { "key": "ctrl ctrl", "command": "workbench.action.tasks.runTask" },
     // Git (⌘9): log de MultiGit.

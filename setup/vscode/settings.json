@@ -1,6 +1,7 @@
 {
     "workbench.editor.empty.hint": "hidden",
-    "workbench.iconTheme": "material-icon-theme",
+    // Estilo IntelliJ: íconos de archivos del "New UI" (2023+). Antes: "material-icon-theme"
+    "workbench.iconTheme": "vscode-jetbrains-icon-theme-2023-auto",
     "[dart]": {
         "editor.formatOnSave": true,
         "editor.formatOnType": true,
@@ -150,6 +151,8 @@
     "git.blame.editorDecoration.enabled": true,
     // Estilo IntelliJ: conflictos de merge en 3 paneles (tuyo | del otro | resultado)
     "git.mergeEditor": true,
+    // Estilo IntelliJ: valores de las variables en línea mientras depuras
+    "debug.inlineValues": "on",
     // Estilo IntelliJ: "Sticky lines" (la cabecera de la clase o el método queda fija al hacer scroll)
     "editor.stickyScroll.enabled": true,
     // Estilo IntelliJ: guardar solo al cambiar de ventana o de archivo (el hot reload de Flutter sigue siendo con ⌘S)

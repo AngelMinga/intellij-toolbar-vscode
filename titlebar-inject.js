@@ -19,6 +19,22 @@
     { id: 'ijt.tw.todo', tabs: ['TODO'] },
     { id: 'ijt.tw.git', tabs: ['MultiGit', 'Source Control'] }
   ];
+  // Columna derecha de IntelliJ: franja vertical en el borde derecho de la ventana. VS Code se acomoda
+  // dejándole RIGHT_STRIPE_W px (ver reserveRightStripe). `close`: op del puente para cerrar al pulsar lo activo.
+  const RIGHT_STRIPE_W = 36;
+  const RIGHT_ITEMS = [
+    { id: 'ijt.rw.notifications', active: () => !!document.querySelector('.notifications-center.visible') },
+    { id: 'ijt.rw.devices', active: () => auxTitle().startsWith('PhonePane'), close: () => 'closeAuxiliaryBar' },
+    { id: 'ijt.rw.inspector', active: () => false },
+    {
+      id: 'ijt.rw.ai',
+      active: () => auxTitle().startsWith('Claude') || (activePanelTab() || '').startsWith('Claude'),
+      close: () => (auxTitle().startsWith('Claude') ? 'closeAuxiliaryBar' : 'closePanel')
+    }
+  ];
+  const STRIPE_VARS = ['--vscode-activityBar-background', '--vscode-activityBar-border', '--vscode-activityBar-foreground',
+    '--vscode-activityBar-inactiveForeground', '--vscode-toolbar-hoverBackground', '--vscode-toolbar-activeBackground',
+    '--vscode-titleBar-activeBackground', '--vscode-statusBar-background', '--vscode-statusBar-border'];
   const SELECTOR_SEL = '[id$=".runConfigurations.selector"]';
   const FLUTTER_SVG = "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'>" +
     "<path fill='%2347C5FB' d='M14.31 1.5 3.6 12.21l3.31 3.31L20.93 1.5z'/>" +
@@ -127,6 +143,36 @@
       background: var(--vscode-toolbar-activeBackground, rgba(128,128,128,.25)) !important;
       color: var(--vscode-activityBar-foreground) !important;
     }
+
+    /* ---- Columna derecha (Notifications, Running Devices, Flutter Inspector, AI) */
+    #ijt-rightstripe {
+      position: fixed; top: 0; right: 0; bottom: 0; width: ${RIGHT_STRIPE_W}px; z-index: 2400;
+      display: flex; flex-direction: column; -webkit-app-region: no-drag;
+      background: var(--vscode-activityBar-background);
+      border-left: 1px solid var(--vscode-activityBar-border, rgba(128,128,128,.2)); box-sizing: border-box;
+    }
+    #ijt-rightstripe .ijt-rs-top { flex: none; background: var(--vscode-titleBar-activeBackground); -webkit-app-region: drag; }
+    #ijt-rightstripe .ijt-rs-bottom { flex: none; margin-top: auto; background: var(--vscode-statusBar-background); }
+    #ijt-rightstripe .ijt-toolwindows { border-top: none; margin: 0; padding: 8px 0; }
+
+    /* ---- Widget de inspecciones: arriba a la derecha del editor activo, como IntelliJ */
+    .ijt-inspections-host { position: absolute; top: 4px; right: 18px; z-index: 10; pointer-events: none; }
+    .ijt-inspections-host:empty { display: none; }
+    .ijt-inspections-host .statusbar-item {
+      display: flex !important; align-items: center; height: 20px; padding: 0 6px !important; border-radius: 4px;
+      pointer-events: auto; cursor: pointer; font-size: 12px; opacity: .85;
+      background: var(--vscode-editorWidget-background) !important; color: var(--vscode-editor-foreground) !important;
+    }
+    .ijt-inspections-host .statusbar-item:hover { opacity: 1; }
+    .ijt-inspections-host .statusbar-item > a {
+      display: flex !important; align-items: center; gap: 3px; padding: 0 !important;
+      color: inherit !important; background: transparent !important;
+    }
+    .ijt-inspections-host .codicon { font-size: 13px !important; }
+    .ijt-inspections-host .codicon-error { color: var(--vscode-editorError-foreground) !important; }
+    .ijt-inspections-host .codicon-warning { color: var(--vscode-editorWarning-foreground) !important; }
+    .ijt-inspections-host .codicon-info { color: var(--vscode-editorInfo-foreground) !important; }
+    .ijt-inspections-host .codicon-check { color: var(--vscode-testing-iconPassed, #73c991) !important; }
 
     /* El selector de device de la extensión Dart queda duplicado con el de la barra superior: se oculta abajo. */
     .monaco-workbench .part.statusbar .statusbar-item[id$=".dartStatusFlutterDevice"] { display: none !important; }
@@ -395,6 +441,9 @@
     }
     const tw = ensureToolWindowsHost();
     if (tw) placeItems(tw, TOOL_WINDOWS.map(t => t.id));
+    const rs = ensureRightStripe();
+    if (rs) placeItems(rs, RIGHT_ITEMS.map(r => r.id));
+    placeInspections();
     watchQuickInput();
   }
 
@@ -431,6 +480,102 @@
       const on = !!tab && t.tabs.some(name => tab.startsWith(name));
       if (el.classList.contains('ijt-active') !== on) el.classList.toggle('ijt-active', on);
     }
+  }
+
+  // Título del panel lateral derecho de VS Code (barra lateral secundaria), o '' si está cerrado.
+  function auxTitle() {
+    const aux = document.querySelector('.part.auxiliarybar');
+    if (!aux || !aux.getClientRects().length || aux.getBoundingClientRect().width < 10) return '';
+    const label = aux.querySelector('.composite-bar .action-item.checked .action-label') || aux.querySelector('.title-label h2');
+    return label ? (label.getAttribute('aria-label') || label.textContent || '').trim() : '';
+  }
+
+  // VS Code calcula su diseño con window.innerWidth: se le informa RIGHT_STRIPE_W px menos (y se fuerza un
+  // relayout) para que deje libre la franja de la derecha, en vez de taparle el borde del editor.
+  let stripeReserved = false;
+  function reserveRightStripe() {
+    if (stripeReserved) return;
+    const own = Object.getOwnPropertyDescriptor(window, 'innerWidth');
+    const proto = Object.getOwnPropertyDescriptor(Window.prototype, 'innerWidth');
+    const d = (own && own.get) ? own : proto;
+    if (!d || !d.get) return;
+    stripeReserved = true;
+    Object.defineProperty(window, 'innerWidth', { configurable: true, get() { return d.get.call(window) - RIGHT_STRIPE_W; } });
+    window.dispatchEvent(new Event('resize'));
+  }
+
+  function ensureRightStripe() {
+    let el = document.getElementById('ijt-rightstripe');
+    if (!el) {
+      const any = RIGHT_ITEMS.some(r => document.querySelector(`.statusbar-item[id$=".${r.id}"]`));
+      if (!any) return null;
+      el = document.createElement('div');
+      el.id = 'ijt-rightstripe';
+      el.innerHTML = '<div class="ijt-rs-top"></div><div class="ijt-toolwindows ijt-rs-items"></div><div class="ijt-rs-bottom"></div>';
+      el.addEventListener('click', onRightStripeClick, true);
+      document.body.appendChild(el);
+      reserveRightStripe();
+    }
+    return el.querySelector('.ijt-rs-items');
+  }
+
+  // Colores del tema (definidos en .monaco-workbench) y alto de barra de título / barra de estado.
+  function refreshRightStripe() {
+    const el = document.getElementById('ijt-rightstripe');
+    if (!el) return;
+    const wb = document.querySelector('.monaco-workbench');
+    if (wb) {
+      const cs = getComputedStyle(wb);
+      for (const v of STRIPE_VARS) {
+        const val = cs.getPropertyValue(v);
+        if (el.style.getPropertyValue(v) !== val) el.style.setProperty(v, val);
+      }
+    }
+    const tb = document.querySelector('.part.titlebar');
+    const sb = document.querySelector('.part.statusbar');
+    const top = tb ? Math.round(tb.getBoundingClientRect().bottom) : 0;
+    const bottom = sb && sb.getClientRects().length ? Math.round(sb.getBoundingClientRect().height) : 0;
+    el.querySelector('.ijt-rs-top').style.height = top + 'px';
+    el.querySelector('.ijt-rs-bottom').style.height = bottom + 'px';
+    for (const r of RIGHT_ITEMS) {
+      const it = el.querySelector(`.statusbar-item[id$=".${r.id}"]`);
+      if (!it) continue;
+      const on = !!r.active();
+      if (it.classList.contains('ijt-active') !== on) it.classList.toggle('ijt-active', on);
+    }
+  }
+
+  function onRightStripeClick(e) {
+    const item = e.target.closest && e.target.closest('.statusbar-item');
+    if (!item || !item.classList.contains('ijt-active')) return;
+    const r = RIGHT_ITEMS.find(x => item.id.endsWith('.' + x.id));
+    if (!r || !r.close) return;
+    sendBridgeOp(r.close());
+    e.preventDefault();
+    e.stopPropagation();
+  }
+
+  function sendBridgeOp(op) {
+    const info = bridgeInfo(document.querySelector('.statusbar-item[id$=".ijt.branchMenu"]'));
+    if (!info) return;
+    fetch(`http://127.0.0.1:${info.port}/action`, {
+      method: 'POST', headers: { 'x-ijt-token': info.token, 'content-type': 'application/json' },
+      body: JSON.stringify({ op })
+    }).then(() => setTimeout(() => { refreshToolWindows(); refreshRightStripe(); }, 150)).catch(() => {});
+  }
+
+  // El widget de inspecciones va dentro del editor del grupo activo.
+  function placeInspections() {
+    const item = document.querySelector('.statusbar-item[id$=".ijt.inspections"]');
+    const container = document.querySelector('.part.editor .editor-group-container.active > .editor-container');
+    if (!item || !container) return;
+    let host = container.querySelector(':scope > .ijt-inspections-host');
+    if (!host) {
+      host = document.createElement('div');
+      host.className = 'ijt-inspections-host';
+      container.appendChild(host);
+    }
+    if (item.parentElement !== host) host.appendChild(item);
   }
 
   // Click sobre la ventana ya abierta: cerrar el panel (como IntelliJ). Si no, el comando normal la abre.
@@ -953,7 +1098,7 @@
       new MutationObserver(schedule).observe(wb, { attributes: true, attributeFilter: ['class'] });
     };
     watchWorkbench();
-    setInterval(() => { try { refreshToolWindows(); } catch { /* ignore */ } }, 400);
+    setInterval(() => { try { refreshToolWindows(); refreshRightStripe(); placeInspections(); } catch { /* ignore */ } }, 400);
     schedule();
   }
 

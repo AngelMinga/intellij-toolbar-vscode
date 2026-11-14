@@ -72,6 +72,50 @@ function register(ctx) {
   }
   git.show();
 
+  // Columna derecha (como IntelliJ): Notifications, Running Devices (PhonePane), Flutter Inspector y AI (Claude Code).
+  // titlebar-inject.js las pone en una franja vertical a la derecha de la ventana.
+  const has = id => !!vscode.extensions.getExtension(id);
+  tw('ijt.rw.notifications', 'Notifications', 14, '$(bell)', 'Notifications', 'notifications.toggleList').show();
+  if (has('angelminga.phonepane')) {
+    tw('ijt.rw.devices', 'Running Devices', 13, '$(device-mobile)', 'Running Devices (PhonePane)', 'workbench.view.extension.phonePaneRight').show();
+  }
+  if (has('Dart-Code.dart-code')) {
+    tw('ijt.rw.inspector', 'Flutter Inspector', 12, '$(inspect)', 'Flutter Inspector (DevTools)', 'dart.openDevToolsInspector').show();
+  }
+  if (has('anthropic.claude-code')) {
+    tw('ijt.rw.ai', 'AI', 11, '$(sparkle)', 'Claude Code', 'claude-vscode.focus').show();
+  }
+
+  // Widget de inspecciones (arriba a la derecha del editor, como IntelliJ): errores y warnings del archivo activo.
+  const inspections = tw('ijt.inspections', 'Inspections', 1, '$(check)', 'Problems (⌘6)', 'workbench.actions.view.problems');
+  const refreshInspections = () => {
+    const ed = vscode.window.activeTextEditor;
+    if (!ed) { inspections.hide(); return; }
+    let errors = 0, warnings = 0, infos = 0;
+    for (const d of vscode.languages.getDiagnostics(ed.document.uri)) {
+      if (d.severity === vscode.DiagnosticSeverity.Error) errors++;
+      else if (d.severity === vscode.DiagnosticSeverity.Warning) warnings++;
+      else infos++;
+    }
+    const parts = [];
+    if (errors) parts.push(`$(error) ${errors}`);
+    if (warnings) parts.push(`$(warning) ${warnings}`);
+    if (infos) parts.push(`$(info) ${infos}`);
+    inspections.text = parts.length ? parts.join('  ') : '$(check)';
+    inspections.tooltip = parts.length
+      ? `${errors} errores, ${warnings} warnings, ${infos} sugerencias en este archivo (clic: Problems)`
+      : 'Sin problemas en este archivo';
+    inspections.show();
+  };
+  ctx.subscriptions.push(
+    vscode.languages.onDidChangeDiagnostics(e => {
+      const ed = vscode.window.activeTextEditor;
+      if (ed && e.uris.some(u => u.toString() === ed.document.uri.toString())) refreshInspections();
+    }),
+    vscode.window.onDidChangeActiveTextEditor(refreshInspections)
+  );
+  refreshInspections();
+
   const sessions = new Set();
 
   const refreshButtons = () => {

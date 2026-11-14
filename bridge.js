@@ -101,6 +101,7 @@ const OPS = {
   rename: () => vscode.commands.executeCommand('git.renameBranch'),
   // Columna de ventanas de herramientas: click sobre la ventana ya abierta la cierra (como IntelliJ).
   closePanel: () => vscode.commands.executeCommand('workbench.action.closePanel'),
+  closeAuxiliaryBar: () => vscode.commands.executeCommand('workbench.action.closeAuxiliaryBar'),
 
   newBranch: async ({ ref }) => menus.newBranch(await repoOrThrow(), ref || undefined),
 
