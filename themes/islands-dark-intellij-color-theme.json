@@ -760,6 +760,58 @@
     "variable.defaultLibrary:typescriptreact": {
       "foreground": "#C77DBB",
       "italic": true
-    }
+    },
+    "function:javascript": "#56A8F5",
+    "function.local:javascript": "#BCBEC4",
+    "function.local.readonly:javascript": "#BCBEC4",
+    "variable:javascript": {
+      "foreground": "#C77DBB",
+      "italic": true
+    },
+    "variable.readonly:javascript": {
+      "foreground": "#C77DBB",
+      "italic": true
+    },
+    "variable.local:javascript": "#BCBEC4",
+    "variable.local.readonly:javascript": "#BCBEC4",
+    "function:javascriptreact": "#56A8F5",
+    "function.local:javascriptreact": "#BCBEC4",
+    "function.local.readonly:javascriptreact": "#BCBEC4",
+    "variable:javascriptreact": {
+      "foreground": "#C77DBB",
+      "italic": true
+    },
+    "variable.readonly:javascriptreact": {
+      "foreground": "#C77DBB",
+      "italic": true
+    },
+    "variable.local:javascriptreact": "#BCBEC4",
+    "variable.local.readonly:javascriptreact": "#BCBEC4",
+    "function:typescript": "#56A8F5",
+    "function.local:typescript": "#BCBEC4",
+    "function.local.readonly:typescript": "#BCBEC4",
+    "variable:typescript": {
+      "foreground": "#C77DBB",
+      "italic": true
+    },
+    "variable.readonly:typescript": {
+      "foreground": "#C77DBB",
+      "italic": true
+    },
+    "variable.local:typescript": "#BCBEC4",
+    "variable.local.readonly:typescript": "#BCBEC4",
+    "function:typescriptreact": "#56A8F5",
+    "function.local:typescriptreact": "#BCBEC4",
+    "function.local.readonly:typescriptreact": "#BCBEC4",
+    "variable:typescriptreact": {
+      "foreground": "#C77DBB",
+      "italic": true
+    },
+    "variable.readonly:typescriptreact": {
+      "foreground": "#C77DBB",
+      "italic": true
+    },
+    "variable.local:typescriptreact": "#BCBEC4",
+    "variable.local.readonly:typescriptreact": "#BCBEC4"
   }
 }
