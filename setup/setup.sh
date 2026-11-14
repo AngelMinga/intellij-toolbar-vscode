@@ -6,6 +6,9 @@
 #   ./setup.sh --basico      Solo extensión + settings (botones en la barra inferior, sin inyección)
 #   ./setup.sh --settings    Solo vuelve a aplicar los settings
 #   ./setup.sh --desinstalar Quita la extensión, el loader y los settings agregados
+#   ./setup.sh --respaldar   Guarda settings, atajos y extensiones en setup/vscode/ (sin datos personales)
+#   ./setup.sh --restaurar   Mac nueva: instala extensiones (Marketplace y propias) y restaura settings y atajos
+#                            (--simular muestra lo que haría; --solo-config copia solo settings y atajos)
 #   ./setup.sh --ayuda       Muestra esta ayuda
 set -euo pipefail
 
@@ -21,7 +24,7 @@ ok()   { printf '\033[1;32m✔\033[0m %s\n' "$*"; }
 warn() { printf '\033[1;33m!\033[0m %s\n' "$*"; }
 die()  { printf '\033[1;31m✖\033[0m %s\n' "$*" >&2; exit 1; }
 
-ayuda() { sed -n '2,9p' "$0" | sed 's/^# \{0,1\}//'; }
+ayuda() { sed -n '2,12p' "$0" | sed 's/^# \{0,1\}//'; }
 
 require_code() {
   command -v code >/dev/null 2>&1 || die "No se encontró el comando 'code'. En VS Code: Cmd+Shift+P → 'Shell Command: Install 'code' command in PATH'."
@@ -89,7 +92,11 @@ PY
 
 install_extension() {
   local vsix; vsix="$(latest_vsix)"
-  [ -n "$vsix" ] || die "No hay ningún intellij-toolbar-*.vsix en $PLUGIN_DIR (genera uno con: npx @vscode/vsce package)."
+  if [ -z "$vsix" ]; then
+    info "No hay .vsix: generándolo con vsce…"
+    (cd "$PLUGIN_DIR" && npx --yes @vscode/vsce package --no-dependencies) || die "No se pudo generar el .vsix (¿está instalado Node.js?)."
+    vsix="$(latest_vsix)"
+  fi
   info "Instalando $(basename "$vsix")…"
   code --install-extension "$vsix" --force 2>&1 | grep -vi deprecat || true
   ok "Extensión IntelliJ Toolbar instalada."
@@ -151,6 +158,16 @@ case "${1:-}" in
     code --uninstall-extension "$LOADER_ID" 2>&1 | grep -vi deprecat || true
     code --uninstall-extension "$EXT_ID" 2>&1 | grep -vi deprecat || true
     ok "Desinstalado. Reinicia VS Code."
+    ;;
+  --respaldar)
+    require_code
+    python3 -I "$SCRIPT_DIR/vscode_backup.py" respaldar
+    ;;
+  --restaurar)
+    require_code
+    shift
+    python3 -I "$SCRIPT_DIR/vscode_backup.py" restaurar "$@"
+    case " $* " in *" --simular "*|*" --solo-config "*) ;; *) install_loader; pasos_finales ;; esac
     ;;
   -h|--ayuda|--help) ayuda ;;
   *) ayuda; exit 1 ;;

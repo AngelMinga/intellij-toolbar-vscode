@@ -144,3 +144,49 @@ Los demás settings (`titleBarStyle`, `commandCenter`, etc.) se mantienen. Si qu
 | Error de permisos al hacer *Enable* | Dar a VS Code el permiso de *Gestión de apps* (ver arriba) y repetir. |
 | El menú de ramas no aparece | Abrir una carpeta que sea un repositorio Git; la extensión Git integrada debe estar activa. |
 | Quiero generar una nueva versión del `.vsix` | En `intellij-toolbar-vscode/`: `npx @vscode/vsce package` y luego `./setup/setup.sh --basico`. |
+
+## Respaldo de la configuración y Mac nueva
+
+Desinstalar VS Code **no** borra la configuración: `settings.json`, `keybindings.json` y las extensiones viven fuera de la app (`~/Library/Application Support/Code/User/` y `~/.vscode/extensions/`). Al reinstalar solo hay que repetir **Enable Custom CSS and JS** y `Cmd+Q`.
+
+Para una Mac nueva, o si se borra todo, el repo guarda un respaldo en `setup/vscode/`:
+
+| Archivo | Contenido |
+|---|---|
+| `settings.json`, `keybindings.json` | Copia de los tuyos como plantilla: `{{HOME}}`, `{{PLUGINS}}` y `{{RG_ARCH}}` en lugar de rutas personales |
+| `extensions.txt` | Extensiones del Marketplace |
+| `own-extensions.json` | Extensiones propias: id, carpeta y repositorio de cada una |
+
+### Mantener el respaldo al día
+
+Cada vez que cambies settings, atajos o extensiones:
+
+```bash
+./setup/setup.sh --respaldar
+git diff setup/vscode          # revisar
+git commit -am "chore: actualizar respaldo de VS Code" && git push
+```
+
+### Restaurar en una Mac nueva
+
+Requisitos: VS Code (con el comando `code` en el PATH), Git, Node.js y python3.
+
+```bash
+mkdir -p ~/IdeaProjects && cd ~/IdeaProjects
+git clone https://github.com/AngelMinga/claude-commit.git plugins-intellij   # trae claude-commit-vscode
+cd plugins-intellij
+git clone https://github.com/AngelMinga/intellij-toolbar-vscode.git
+./intellij-toolbar-vscode/setup/setup.sh --restaurar --simular   # ver qué hará
+./intellij-toolbar-vscode/setup/setup.sh --restaurar
+```
+
+El script:
+1. Instala las extensiones del Marketplace que falten.
+2. Clona los repos de las extensiones propias que falten (run-config, MultiGit, PhonePane), las compila y las instala.
+3. Copia `settings.json` y `keybindings.json` con las rutas de esa Mac (guarda antes una copia `*.bak-<fecha>` de los existentes).
+4. Instala Custom CSS and JS Loader.
+
+Luego: `Cmd+Shift+P` → **Enable Custom CSS and JS** y `Cmd+Q`.
+
+`--solo-config` restaura solo settings y atajos. Ojo: `java.import.gradle.java.home` apunta a la versión de Java instalada con Homebrew; si en la Mac nueva es otra, ajústala.
+

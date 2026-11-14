@@ -1,0 +1,168 @@
+{
+    "workbench.editor.empty.hint": "hidden",
+    "workbench.iconTheme": "material-icon-theme",
+    "[dart]": {
+        "editor.formatOnSave": true,
+        "editor.formatOnType": true,
+        "editor.rulers": [
+            100, 120
+        ],
+        "editor.selectionHighlight": false,
+        "editor.tabCompletion": "onlySnippets",
+        "editor.wordBasedSuggestions": "off"
+    },
+    "claudeCode.preferredLocation": "panel",
+    "editor.linkedEditing": true,
+    "editor.wordWrapColumn": 120,
+    "editor.fontLigatures": true,
+    "editor.fontFamily": "JetBrains Mono, monospace",
+    "terminal.integrated.fontLigatures.fallbackLigatures": [
+
+        "<--",
+        "<---",
+        "<<-",
+        "<-",
+        "->",
+        "->>",
+        "-->",
+        "--->",
+        "<==",
+        "<===",
+        "<<=",
+        "<=",
+        "=>",
+        "=>>",
+        "==>",
+        "===>",
+        ">=",
+        ">>=",
+        "<->",
+        "<-->",
+        "<--->",
+        "<---->",
+        "<=>",
+        "<==>",
+        "<===>",
+        "<====>",
+        "::",
+        ":::",
+        "<~~",
+        "</",
+        "</>",
+        "/>",
+        "~~>",
+        "==",
+        "!=",
+        "/=",
+        "~=",
+        "<>",
+        "===",
+        "!==",
+        "!===",
+        "<:",
+        ":=",
+        "*=",
+        "*+",
+        "<*",
+        "<*>",
+        "*>",
+        "<|",
+        "<|>",
+        "|>",
+        "+*",
+        "=*",
+        "=:",
+        ":>",
+        "/*",
+        "*/",
+        "+++",
+        "<!--",
+        "<!---"
+    ],
+    "mssql.connectionGroups": [
+        {
+            "name": "ROOT",
+            "id": "ROOT"
+        }
+    ],
+    "workbench.activityBar.compact": true,
+      // Pestañas más bajitas
+  "window.density.editorTabHeight": "compact",
+
+  // Menos ruido en el editor
+  "editor.minimap.enabled": false,
+"breadcrumbs.enabled": false,
+  "editor.lineHeight": 20,
+
+  // Árbol de archivos más apretado
+  "workbench.tree.indent": 10,
+  "workbench.tree.renderIndentGuides": "onHover",
+  "explorer.compactFolders": true,
+
+  // Barra de título más limpia
+  // Izquierda: proyecto + rama, estilo IntelliJ
+  "window.commandCenter": true,
+  "workbench.layoutControl.enabled": true,
+"window.title": "${rootName}   ⎇ ${activeRepositoryBranchName}",
+
+  // Terminal y paneles
+  "terminal.integrated.fontSize": 12,
+  "window.zoomLevel": -1,
+"window.titleBarStyle": "custom",
+
+// Mueve los botones a la barra superior (derecha)
+"workbench.editor.editorActionsLocation": "titleBar",
+
+
+
+// Quita lo que ya no necesitas abajo
+"debug.showInStatusBar": "never",
+"git-graph.showStatusBarItem": false,
+
+
+  "debug.console.fontSize": 12,
+    "chat.instructionsFilesLocations": {
+        ".github/instructions": true,
+        ".claude/rules": true,
+        "~/.copilot/instructions": true,
+        "~/.claude/rules": true
+    },
+    "claudeCode.hideOnboarding": true,
+    "claudeCommit.alwaysIncludeScope": true,
+    "claudeCommit.overwriteWithoutAsking": true,
+    "chat.hookFilesLocations": {
+        "~/.claude/settings.json": false
+    },
+    // Diffs siempre en dos paneles (original | cambios), como IntelliJ, aunque el editor sea angosto.
+    "diffEditor.renderSideBySide": true,
+    "diffEditor.useInlineViewWhenSpaceIsLimited": false,
+    "java.import.gradle.java.home": "/opt/homebrew/Cellar/openjdk@17/17.0.21.0.3/libexec/openjdk.jdk/Contents/Home",
+    "window.density.layout": "compact",
+    // Botones de proyecto y rama en la barra de título (IntelliJ Toolbar + Custom CSS and JS Loader)
+    "vscode_custom_css.imports": [
+        "file://{{PLUGINS}}/intellij-toolbar-vscode/titlebar-inject.js"
+    ],
+    // Estilo IntelliJ: "Annotate" en línea (autor y fecha del último cambio de la línea actual)
+    "git.blame.editorDecoration.enabled": true,
+    // Estilo IntelliJ: "Sticky lines" (la cabecera de la clase o el método queda fija al hacer scroll)
+    "editor.stickyScroll.enabled": true,
+    // Estilo IntelliJ: guardar solo al cambiar de ventana o de archivo (el hot reload de Flutter sigue siendo con ⌘S)
+    "files.autoSave": "onFocusChange",
+    // Estilo IntelliJ: cada archivo abierto queda en una pestaña fija (sin pestaña "preview")
+    "workbench.editor.enablePreview": false,
+    // Estilo IntelliJ: máximo 10 pestañas; al pasarse se cierra la menos usada (las modificadas no se cierran)
+    "workbench.editor.limit.enabled": true,
+    "workbench.editor.limit.value": 10,
+    "workbench.editor.limit.excludeDirty": true,
+    // Estilo IntelliJ: imports plegados al abrir un archivo
+    "editor.foldingImportsByDefault": true,
+    // Estilo IntelliJ: ⌘B con varias definiciones muestra la lista para elegir
+    "editor.gotoLocation.multipleDefinitions": "peek",
+    // Estilo IntelliJ: la ventana Run (Debug Console) se abre en cada ejecución
+    "debug.internalConsoleOptions": "openOnSessionStart",
+    // Estilo IntelliJ: guías del árbol de widgets de Flutter
+    "dart.previewFlutterUiGuides": true,
+    "dart.previewFlutterUiGuidesCustomTracking": true,
+    // Todo Tree busca ripgrep en la ruta antigua de VS Code (@vscode/ripgrep); ahora viene en @vscode/ripgrep-universal
+    "todo-tree.ripgrep.ripgrep": "/Applications/Visual Studio Code.app/Contents/Resources/app/node_modules.asar.unpacked/@vscode/ripgrep-universal/bin/{{RG_ARCH}}/rg"
+}

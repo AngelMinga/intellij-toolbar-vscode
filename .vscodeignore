@@ -1,3 +1,4 @@
 *.vsix
 setup/**
 titlebar-inject.js
+.gitignore
