@@ -2,7 +2,7 @@
   "name": "intellij-toolbar",
   "displayName": "IntelliJ Toolbar",
   "description": "Barra estilo IntelliJ: proyectos recientes, menú de ramas, device Flutter, configuración, Run y Debug.",
-  "version": "0.9.4",
+  "version": "0.10.0",
   "publisher": "angelminga",
   "license": "MIT",
   "repository": {
@@ -155,6 +155,11 @@
         "label": "Islands Dark (IntelliJ)",
         "uiTheme": "vs-dark",
         "path": "./themes/islands-dark-intellij-color-theme.json"
+      },
+      {
+        "label": "Islands Dark (código VS Code)",
+        "uiTheme": "vs-dark",
+        "path": "./themes/islands-dark-vscode-code-color-theme.json"
       }
     ]
   }

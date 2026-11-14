@@ -8,6 +8,7 @@ Barra superior de VS Code al estilo IntelliJ IDEA (macOS):
 - **Derecha (columna):** Notifications, Running Devices (PhonePane), Flutter Inspector y AI (Claude Code), en una franja vertical como la de IntelliJ.
 - **Editor:** indicador de problemas del archivo arriba a la derecha (errores, warnings o ✓); clic → Problems.
 - **Tema "Islands Dark (IntelliJ)":** colores del editor y de la interfaz extraídos de IntelliJ IDEA (esquema Islands Dark), con resaltado semántico para Dart.
+- **Tema "Islands Dark (código VS Code)":** la misma interfaz de Islands, con los colores de código por defecto de VS Code (se genera con `themes/build_vscode_code_variant.py`).
 - Los menús se abren **debajo del botón** pulsado, también con `window.zoomLevel` distinto de 0.
 
 ## Cómo funciona

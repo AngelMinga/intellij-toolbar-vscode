@@ -2,8 +2,6 @@
     "workbench.editor.empty.hint": "hidden",
     // Estilo IntelliJ: íconos de archivos del "New UI" (2023+). Antes: "material-icon-theme"
     "workbench.iconTheme": "vscode-jetbrains-icon-theme-2023-auto",
-    // Estilo IntelliJ: tema Islands Dark generado desde IntelliJ IDEA 2026.3 (extensión intellij-toolbar)
-    "workbench.colorTheme": "Islands Dark (IntelliJ)",
     "[dart]": {
         "editor.formatOnSave": true,
         "editor.formatOnType": true,
@@ -175,5 +173,6 @@
     "dart.previewFlutterUiGuides": true,
     "dart.previewFlutterUiGuidesCustomTracking": true,
     // Todo Tree busca ripgrep en la ruta antigua de VS Code (@vscode/ripgrep); ahora viene en @vscode/ripgrep-universal
-    "todo-tree.ripgrep.ripgrep": "/Applications/Visual Studio Code.app/Contents/Resources/app/node_modules.asar.unpacked/@vscode/ripgrep-universal/bin/{{RG_ARCH}}/rg"
+    "todo-tree.ripgrep.ripgrep": "/Applications/Visual Studio Code.app/Contents/Resources/app/node_modules.asar.unpacked/@vscode/ripgrep-universal/bin/{{RG_ARCH}}/rg",
+    "workbench.colorTheme": "Islands Dark (IntelliJ)"
 }

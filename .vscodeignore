@@ -2,3 +2,4 @@
 setup/**
 titlebar-inject.js
 .gitignore
+themes/*.py
