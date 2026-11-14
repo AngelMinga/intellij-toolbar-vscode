@@ -30,6 +30,30 @@ function register(ctx) {
   const settings = item('ijt.settingsBtn', 'Ajustes', 10002, '$(settings-gear)', 'Ajustes, atajos, extensiones y tema', 'ijt.settings');
   ctx.subscriptions.push(reload, restart, more, search, settings);
 
+  // Ventanas de herramientas de abajo (columna izquierda de IntelliJ): Run, Terminal, Problems, Git.
+  // titlebar-inject.js las mueve al pie de la barra de actividad y marca la que está abierta.
+  const L = vscode.StatusBarAlignment.Left;
+  const tw = (id, name, prio, icon, tooltip, command) => {
+    const it = vscode.window.createStatusBarItem(id, L, prio);
+    it.name = `IntelliJ Toolbar: ${name}`;
+    it.text = icon;
+    it.tooltip = tooltip;
+    it.command = command;
+    ctx.subscriptions.push(it);
+    return it;
+  };
+  const toolWindows = [
+    tw('ijt.tw.run', 'Run', 5, '$(play-circle)', 'Run (⌘4)', 'workbench.debug.action.toggleRepl'),
+    tw('ijt.tw.terminal', 'Terminal', 4, '$(terminal)', 'Terminal (⌥F12)', 'workbench.action.terminal.toggleTerminal'),
+    tw('ijt.tw.problems', 'Problems', 3, '$(warning)', 'Problems (⌘6)', 'workbench.actions.view.toggleProblems')
+  ];
+  const git = tw('ijt.tw.git', 'Git', 2, '$(source-control)', 'Git (⌘9)', 'multigit.showLog');
+  toolWindows.forEach(i => i.show());
+  hasCommand('multigit.showLog').then(ok => {
+    if (!ok) { git.command = 'workbench.view.scm'; git.tooltip = 'Source Control (⌘0)'; }
+    git.show();
+  });
+
   const sessions = new Set();
 
   const refreshButtons = () => {

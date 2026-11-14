@@ -99,6 +99,8 @@ const OPS = {
   newWorktree: () => vscode.commands.executeCommand('git.createWorktree'),
   checkoutTag: () => vscode.commands.executeCommand('git.checkoutDetached'),
   rename: () => vscode.commands.executeCommand('git.renameBranch'),
+  // Columna de ventanas de herramientas: click sobre la ventana ya abierta la cierra (como IntelliJ).
+  closePanel: () => vscode.commands.executeCommand('workbench.action.closePanel'),
 
   newBranch: async ({ ref }) => menus.newBranch(await repoOrThrow(), ref || undefined),
 

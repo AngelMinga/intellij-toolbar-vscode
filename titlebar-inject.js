@@ -9,6 +9,14 @@
   const RIGHT_IDS = ['runConfigurations.device', 'runConfigurations.selector', 'runConfigurations.run',
     'runConfigurations.debug', 'runConfigurations.stop', 'ijt.reloadBtn', 'ijt.restartBtn', 'ijt.moreBtn', 'ijt.searchBtn', 'ijt.settingsBtn'];
   const DEVICE_SEL = '[id$=".runConfigurations.device"]';
+  // Columna de ventanas de herramientas (pie de la barra de actividad, como IntelliJ) y el nombre de la
+  // pestaña del panel inferior que corresponde a cada una (para resaltar la que está abierta).
+  const TOOL_WINDOWS = [
+    { id: 'ijt.tw.run', tabs: ['Debug Console'] },
+    { id: 'ijt.tw.terminal', tabs: ['Terminal'] },
+    { id: 'ijt.tw.problems', tabs: ['Problems'] },
+    { id: 'ijt.tw.git', tabs: ['MultiGit', 'Source Control'] }
+  ];
   const SELECTOR_SEL = '[id$=".runConfigurations.selector"]';
   const FLUTTER_SVG = "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'>" +
     "<path fill='%2347C5FB' d='M14.31 1.5 3.6 12.21l3.31 3.31L20.93 1.5z'/>" +
@@ -90,6 +98,27 @@
     }
     .monaco-workbench .part.titlebar .command-center .action-item.command-center-center.multiple { padding: 0 !important; }
     .ijt-right [id$=".ijt.searchBtn"] { margin-left: 2px; }
+
+    /* ---- Columna de ventanas de herramientas al pie de la barra de actividad */
+    .ijt-toolwindows {
+      display: flex; flex-direction: column; align-items: center; gap: 2px;
+      padding: 6px 0; margin: 4px 6px 0; border-top: 1px solid var(--vscode-activityBar-border, rgba(128,128,128,.25));
+    }
+    .ijt-toolwindows .statusbar-item {
+      display: flex !important; align-items: center; justify-content: center;
+      width: 30px; height: 30px; padding: 0 !important; border-radius: 6px; cursor: pointer;
+      background: transparent !important; color: var(--vscode-activityBar-inactiveForeground) !important;
+    }
+    .ijt-toolwindows .statusbar-item > a {
+      display: flex !important; align-items: center; justify-content: center; padding: 0 !important;
+      color: inherit !important; background: transparent !important;
+    }
+    .ijt-toolwindows .statusbar-item .codicon { font-size: 18px !important; }
+    .ijt-toolwindows .statusbar-item:hover { background: var(--vscode-toolbar-hoverBackground) !important; color: var(--vscode-activityBar-foreground) !important; }
+    .ijt-toolwindows .statusbar-item.ijt-active {
+      background: var(--vscode-toolbar-activeBackground, rgba(128,128,128,.25)) !important;
+      color: var(--vscode-activityBar-foreground) !important;
+    }
 
     /* El selector de device de la extensión Dart queda duplicado con el de la barra superior: se oculta abajo. */
     .monaco-workbench .part.statusbar .statusbar-item[id$=".dartStatusFlutterDevice"] { display: none !important; }
@@ -356,7 +385,58 @@
         if (/\.runConfigurations\.device$/.test(el.id)) decorateDevice(el);
       }
     }
+    const tw = ensureToolWindowsHost();
+    if (tw) placeItems(tw, TOOL_WINDOWS.map(t => t.id));
     watchQuickInput();
+  }
+
+  function ensureToolWindowsHost() {
+    const content = document.querySelector('.part.activitybar > .content');
+    if (!content) return null;
+    let host = content.querySelector(':scope > .ijt-toolwindows');
+    if (!host) {
+      host = document.createElement('div');
+      host.className = 'ijt-toolwindows';
+      host.addEventListener('click', onToolWindowClick, true);
+    }
+    // Justo después de los íconos de arriba (composite-bar): queda al pie, sobre Cuentas y Ajustes.
+    const bar = content.querySelector(':scope > .composite-bar');
+    const want = bar ? bar.nextSibling : content.firstChild;
+    if (host.parentElement !== content || (bar && host.previousSibling !== bar)) content.insertBefore(host, want);
+    return host;
+  }
+
+  // Pestaña activa del panel inferior, o null si el panel está cerrado.
+  function activePanelTab() {
+    const panel = document.querySelector('.part.panel');
+    if (!panel || !panel.getClientRects().length || panel.getBoundingClientRect().height < 10) return null;
+    const label = panel.querySelector(':scope > .title .composite-bar .action-item.checked .action-label');
+    if (!label) return null;
+    return (label.getAttribute('aria-label') || label.textContent || '').trim();
+  }
+
+  function refreshToolWindows() {
+    const tab = activePanelTab();
+    for (const t of TOOL_WINDOWS) {
+      const el = document.querySelector(`.ijt-toolwindows .statusbar-item[id$=".${t.id}"]`);
+      if (!el) continue;
+      const on = !!tab && t.tabs.some(name => tab.startsWith(name));
+      if (el.classList.contains('ijt-active') !== on) el.classList.toggle('ijt-active', on);
+    }
+  }
+
+  // Click sobre la ventana ya abierta: cerrar el panel (como IntelliJ). Si no, el comando normal la abre.
+  function onToolWindowClick(e) {
+    const item = e.target.closest && e.target.closest('.statusbar-item');
+    if (!item || !item.classList.contains('ijt-active')) return;
+    const info = bridgeInfo(document.querySelector('.statusbar-item[id$=".ijt.branchMenu"]'));
+    if (!info) return;
+    e.preventDefault();
+    e.stopPropagation();
+    fetch(`http://127.0.0.1:${info.port}/action`, {
+      method: 'POST', headers: { 'x-ijt-token': info.token, 'content-type': 'application/json' },
+      body: JSON.stringify({ op: 'closePanel' })
+    }).then(() => setTimeout(refreshToolWindows, 150)).catch(() => {});
   }
 
   // Deja libre el espacio de los semáforos de macOS (cerrar / minimizar / maximizar).
@@ -865,6 +945,7 @@
       new MutationObserver(schedule).observe(wb, { attributes: true, attributeFilter: ['class'] });
     };
     watchWorkbench();
+    setInterval(() => { try { refreshToolWindows(); } catch { /* ignore */ } }, 400);
     schedule();
   }
 
