@@ -71,6 +71,7 @@ function activate(ctx) {
 
   const reg = (id, fn) => ctx.subscriptions.push(vscode.commands.registerCommand(id, fn));
   reg('ijt.more', () => toolbar.moreMenu());
+  reg('ijt.settings', () => toolbar.settingsMenu());
   reg('ijt.hotReload', async () => {
     const s = vscode.debug.activeDebugSession;
     if (s && (s.type === 'dart' || s.type === 'flutter')) return toolbar.exec('flutter.hotReload');

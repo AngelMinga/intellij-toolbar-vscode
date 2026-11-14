@@ -1,4 +1,4 @@
-// Botones extra del lado derecho estilo IntelliJ: Hot Reload, Hot Restart y "más" (⋮).
+// Botones extra del lado derecho estilo IntelliJ: Hot Reload, Hot Restart, "más" (⋮), buscar (lupa) y ajustes (⚙).
 // Se crean como items de la barra de estado; titlebar-inject.js los mueve a la barra de título.
 const vscode = require('vscode');
 
@@ -23,7 +23,12 @@ function register(ctx) {
   const reload = item('ijt.reloadBtn', 'Hot Reload', 10009, '$(zap)', 'Hot Reload', 'ijt.hotReload');
   const restart = item('ijt.restartBtn', 'Hot Restart', 10008, '$(debug-restart)', 'Hot Restart', 'ijt.hotRestart');
   const more = item('ijt.moreBtn', 'Más acciones', 10004, '$(kebab-vertical)', 'Más acciones', 'ijt.more');
-  ctx.subscriptions.push(reload, restart, more);
+  // Lupa estilo IntelliJ: abre el mismo panel que el buscador del centro (Go to File, comandos, texto…).
+  const search = item('ijt.searchBtn', 'Buscar', 10003, '$(search)',
+    'Buscar: archivos, comandos, texto, símbolos (⌘P)', 'workbench.action.quickOpenWithModes');
+  // Engranaje estilo IntelliJ ("IDE and Project Settings").
+  const settings = item('ijt.settingsBtn', 'Ajustes', 10002, '$(settings-gear)', 'Ajustes, atajos, extensiones y tema', 'ijt.settings');
+  ctx.subscriptions.push(reload, restart, more, search, settings);
 
   const sessions = new Set();
 
@@ -31,6 +36,8 @@ function register(ctx) {
     const running = sessions.size > 0;
     const dartRunning = [...sessions].some(isDartSession);
     more.show();
+    search.show();
+    settings.show();
     dartRunning ? reload.show() : reload.hide();
     running ? restart.show() : restart.hide();
     restart.tooltip = dartRunning ? 'Hot Restart' : 'Restart';
@@ -88,4 +95,26 @@ async function moreMenu() {
   if (pick && pick.cmd) await exec(pick.cmd);
 }
 
-module.exports = { register, moreMenu, exec };
+async function settingsMenu() {
+  const S = vscode.QuickPickItemKind.Separator;
+  const items = [
+    { label: '$(settings-gear) Settings…', description: '⌘,', cmd: 'workbench.action.openSettings' },
+    { label: '$(json) Settings (JSON)', cmd: 'workbench.action.openSettingsJson' },
+    { label: '$(keyboard) Keymap…', cmd: 'workbench.action.openGlobalKeybindings' },
+    { label: '$(json) Keymap (JSON)', cmd: 'workbench.action.openGlobalKeybindingsFile' },
+    { label: '$(extensions) Plugins…', description: 'Extensiones', cmd: 'workbench.view.extensions' },
+    { label: 'Apariencia', kind: S },
+    { label: '$(symbol-color) Theme…', cmd: 'workbench.action.selectTheme' },
+    { label: '$(file-media) File Icon Theme…', cmd: 'workbench.action.selectIconTheme' },
+    { label: '$(zoom-in) Zoom In', cmd: 'workbench.action.zoomIn' },
+    { label: '$(zoom-out) Zoom Out', cmd: 'workbench.action.zoomOut' },
+    { label: 'IntelliJ Toolbar', kind: S },
+    { label: '$(refresh) Reload Custom CSS and JS', description: 'tras editar titlebar-inject.js', cmd: 'extension.updateCustomCSS' },
+    { label: '$(account) Profiles…', cmd: 'workbench.profiles.actions.manageProfiles' },
+    { label: '$(cloud-download) Check for Updates…', cmd: 'update.checkForUpdate' }
+  ];
+  const pick = await vscode.window.showQuickPick(items, { placeHolder: 'Ajustes' });
+  if (pick && pick.cmd) await exec(pick.cmd);
+}
+
+module.exports = { register, moreMenu, settingsMenu, exec };

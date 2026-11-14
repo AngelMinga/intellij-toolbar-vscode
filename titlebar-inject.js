@@ -7,7 +7,7 @@
   const LEFT_IDS = ['ijt.project', 'ijt.branchMenu'];
   // Device, configuración, Run, Debug y Stop: extensión run-configurations. Hot Reload/Restart y ⋮: intellij-toolbar.
   const RIGHT_IDS = ['runConfigurations.device', 'runConfigurations.selector', 'runConfigurations.run',
-    'runConfigurations.debug', 'runConfigurations.stop', 'ijt.reloadBtn', 'ijt.restartBtn', 'ijt.moreBtn'];
+    'runConfigurations.debug', 'runConfigurations.stop', 'ijt.reloadBtn', 'ijt.restartBtn', 'ijt.moreBtn', 'ijt.searchBtn', 'ijt.settingsBtn'];
   const DEVICE_SEL = '[id$=".runConfigurations.device"]';
   const SELECTOR_SEL = '[id$=".runConfigurations.selector"]';
   const FLUTTER_SVG = "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'>" +
@@ -67,7 +67,8 @@
     .ijt-right ${SELECTOR_SEL} .codicon-device-mobile::before { content: '' !important; }
     .ijt-right [id$=".runConfigurations.run"], .ijt-right [id$=".runConfigurations.debug"],
     .ijt-right [id$=".runConfigurations.stop"], .ijt-right [id$=".ijt.reloadBtn"],
-    .ijt-right [id$=".ijt.restartBtn"], .ijt-right [id$=".ijt.moreBtn"] {
+    .ijt-right [id$=".ijt.restartBtn"], .ijt-right [id$=".ijt.moreBtn"], .ijt-right [id$=".ijt.searchBtn"],
+    .ijt-right [id$=".ijt.settingsBtn"] {
       width: 26px; padding: 0 !important; justify-content: center;
     }
     .ijt-right [id$=".runConfigurations.run"] { margin-left: 4px; }
@@ -78,6 +79,34 @@
     .ijt-right [id$=".ijt.reloadBtn"] .codicon { color: #e5c07b !important; }
     .ijt-right [id$=".ijt.restartBtn"] .codicon { color: #5fb865 !important; }
     .ijt-right .statusbar-item .codicon { font-size: 15px !important; }
+
+    /* ---- Buscador del centro (command center): se oculta; su función la cumple la lupa de la derecha
+       (botón ijt.searchBtn → workbench.action.quickOpenWithModes). Los otros íconos que VS Code pone
+       en esa zona (p. ej. chat) se mantienen, sin el marco de la caja. */
+    .monaco-workbench .part.titlebar .command-center .command-center-quick-pick { display: none !important; }
+    .monaco-workbench .part.titlebar > .titlebar-container > .titlebar-center > .window-title > .command-center .action-item.command-center-center {
+      width: auto !important; min-width: 0 !important; max-width: none !important;
+      border-color: transparent !important; background: transparent !important;
+    }
+    .monaco-workbench .part.titlebar .command-center .action-item.command-center-center.multiple { padding: 0 !important; }
+    .ijt-right [id$=".ijt.searchBtn"] { margin-left: 2px; }
+
+    /* El selector de device de la extensión Dart queda duplicado con el de la barra superior: se oculta abajo. */
+    .monaco-workbench .part.statusbar .statusbar-item[id$=".dartStatusFlutterDevice"] { display: none !important; }
+
+    /* VS Code con la barra unificada de agentes (.unified-agents-bar / .agent-status-enabled) no usa el
+       buscador clásico sino una "píldora": flechas ← →, título (abre el buscador), búsqueda y chat.
+       Se ocultan el título, su separador y la búsqueda; quedan las flechas y los íconos del chat. */
+    .monaco-workbench .part.titlebar .command-center .action-item.agent-status-container {
+      width: auto !important; max-width: none !important;
+    }
+    .monaco-workbench .part.titlebar .agent-status-pill {
+      flex: none !important; background: transparent !important; border-color: transparent !important;
+    }
+    .monaco-workbench .part.titlebar .agent-status-pill .agent-status-input-area,
+    .monaco-workbench .part.titlebar .agent-status-pill .agent-status-line-separator,
+    .monaco-workbench .part.titlebar .agent-status-pill .agent-status-search { display: none !important; }
+    .monaco-workbench .part.titlebar .agent-status-command-center-toolbar { background: transparent !important; }
   `;
 
   function initials(name) {
@@ -245,7 +274,8 @@
   function applyPlacement(w) {
     const s = w.style;
     const width = w.offsetWidth || parseFloat(s.width) || 600;
-    const wanted = placed.alignRight ? placed.right - width : placed.left;
+    const wanted = placed.alignCenter ? (placed.left + placed.right) / 2 - width / 2
+      : placed.alignRight ? placed.right - width : placed.left;
     const left = Math.max(8, Math.min(wanted, window.innerWidth - width - 8));
     const ours = s.getPropertyPriority('left') === 'important' && s.getPropertyPriority('top') === 'important';
     let cssLeft = ours ? parseFloat(s.left) : left;
@@ -282,7 +312,7 @@
     // Un click reciente siempre manda, aunque el widget siga abierto: VS Code reutiliza el mismo
     // widget al pasar de un menú a otro sin ocultarlo.
     if (anchor && Date.now() - anchor.at < 2000) {
-      placed = { left: anchor.left, right: anchor.right, alignRight: anchor.alignRight, top: anchor.top };
+      placed = { left: anchor.left, right: anchor.right, alignRight: anchor.alignRight, alignCenter: anchor.alignCenter, top: anchor.top };
       placedWidget = w;
       anchor = null;
     }
