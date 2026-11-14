@@ -2,6 +2,8 @@
     "workbench.editor.empty.hint": "hidden",
     // Estilo IntelliJ: íconos de archivos del "New UI" (2023+). Antes: "material-icon-theme"
     "workbench.iconTheme": "vscode-jetbrains-icon-theme-2023-auto",
+    // Estilo IntelliJ: tema Islands Dark generado desde IntelliJ IDEA 2026.3 (extensión intellij-toolbar)
+    "workbench.colorTheme": "Islands Dark (IntelliJ)",
     "[dart]": {
         "editor.formatOnSave": true,
         "editor.formatOnType": true,
