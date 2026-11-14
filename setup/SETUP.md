@@ -34,7 +34,7 @@ intellij-toolbar-vscode/
 ├── extension.js, menus.js, package.json   # código de la extensión
 ├── toolbar.js                             # botones extra: Hot Reload, Hot Restart, ⋮ (Run/Debug los pone run-configurations)
 ├── bridge.js                              # servidor local (127.0.0.1 + token) para el menú de ramas
-├── intellij-toolbar-0.7.0.vsix            # extensión empaquetada
+├── intellij-toolbar-0.7.1.vsix            # extensión empaquetada
 ├── titlebar-inject.js                     # mueve los botones arriba y dibuja el menú de ramas estilo IntelliJ
 └── setup/
     ├── setup.sh                           # instalador

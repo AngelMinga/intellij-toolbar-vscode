@@ -14,7 +14,9 @@
   const TOOL_WINDOWS = [
     { id: 'ijt.tw.run', tabs: ['Debug Console'] },
     { id: 'ijt.tw.terminal', tabs: ['Terminal'] },
+    { id: 'ijt.tw.output', tabs: ['Output'] },
     { id: 'ijt.tw.problems', tabs: ['Problems'] },
+    { id: 'ijt.tw.todo', tabs: ['TODO'] },
     { id: 'ijt.tw.git', tabs: ['MultiGit', 'Source Control'] }
   ];
   const SELECTOR_SEL = '[id$=".runConfigurations.selector"]';

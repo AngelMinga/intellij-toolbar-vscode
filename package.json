@@ -2,7 +2,7 @@
   "name": "intellij-toolbar",
   "displayName": "IntelliJ Toolbar",
   "description": "Barra estilo IntelliJ: proyectos recientes, menú de ramas, device Flutter, configuración, Run y Debug.",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "publisher": "angelminga",
   "license": "MIT",
   "repository": {
@@ -140,6 +140,15 @@
           "description": "Mostrar también los botones como íconos en la barra del editor (no hace falta si usas titlebar-inject.js)."
         }
       }
+    },
+    "viewsContainers": {
+      "panel": [
+        {
+          "id": "ijt-todo",
+          "title": "TODO",
+          "icon": "media/todo.svg"
+        }
+      ]
     }
   }
 }

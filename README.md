@@ -4,7 +4,7 @@ Barra superior de VS Code al estilo IntelliJ IDEA (macOS):
 
 - **Izquierda:** proyecto (`FA fintech_app ⌄`, proyectos recientes) y rama (`⎇ rama ⌄`), con un menú de ramas propio: carpetas plegables en *Recent / Local / Remote* y un submenú a un lado por rama (Checkout, New Branch from, Rebase, Merge, Compare, Pull, Delete…).
 - **Derecha:** device, configuración, Run, Debug y Stop (de la extensión [run-configurations](https://github.com/AngelMinga/run-config)), más Hot Reload, Hot Restart, `⋮` (DevTools, Get Packages, Clean…) una lupa 🔍 que abre el buscador de VS Code (Go to File, comandos, texto…) y un ⚙ con Settings, Keymap, Plugins y Theme. El buscador del centro de la barra se oculta.
-- **Abajo a la izquierda:** columna de ventanas de herramientas (Run, Terminal, Problems, Git) al pie de la barra de actividad; la abierta queda resaltada y un clic sobre ella cierra el panel.
+- **Abajo a la izquierda:** columna de ventanas de herramientas (Run, Terminal, Output, Problems, TODO, Git) al pie de la barra de actividad; la abierta queda resaltada y un clic sobre ella cierra el panel.
 - Los menús se abren **debajo del botón** pulsado, también con `window.zoomLevel` distinto de 0.
 
 ## Cómo funciona

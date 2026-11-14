@@ -43,16 +43,32 @@ function register(ctx) {
     return it;
   };
   const toolWindows = [
-    tw('ijt.tw.run', 'Run', 5, '$(play-circle)', 'Run (⌘4)', 'workbench.debug.action.toggleRepl'),
-    tw('ijt.tw.terminal', 'Terminal', 4, '$(terminal)', 'Terminal (⌥F12)', 'workbench.action.terminal.toggleTerminal'),
-    tw('ijt.tw.problems', 'Problems', 3, '$(warning)', 'Problems (⌘6)', 'workbench.actions.view.toggleProblems')
+    tw('ijt.tw.run', 'Run', 7, '$(play-circle)', 'Run (⌘4)', 'workbench.debug.action.toggleRepl'),
+    tw('ijt.tw.terminal', 'Terminal', 6, '$(terminal)', 'Terminal (⌥F12)', 'workbench.action.terminal.toggleTerminal'),
+    tw('ijt.tw.output', 'Output', 5, '$(output)', 'Output', 'workbench.action.output.toggleOutput'),
+    tw('ijt.tw.problems', 'Problems', 4, '$(warning)', 'Problems (⌘6)', 'workbench.actions.view.toggleProblems')
   ];
-  const git = tw('ijt.tw.git', 'Git', 2, '$(source-control)', 'Git (⌘9)', 'multigit.showLog');
   toolWindows.forEach(i => i.show());
-  hasCommand('multigit.showLog').then(ok => {
-    if (!ok) { git.command = 'workbench.view.scm'; git.tooltip = 'Source Control (⌘0)'; }
-    git.show();
-  });
+
+  // TODO: la vista de Todo Tree se mueve (una vez) a la pestaña "TODO" del panel que declara esta extensión.
+  const todo = tw('ijt.tw.todo', 'TODO', 3, '$(checklist)', 'TODO', 'workbench.view.extension.ijt-todo');
+  const TODO_VIEW = 'todo-tree-view';
+  if (vscode.extensions.getExtension('Gruntfuggly.todo-tree')) {
+    todo.show();
+    if (!ctx.globalState.get('ijt.todoMoved')) {
+      Promise.resolve(vscode.commands.executeCommand('vscode.moveViews', { viewIds: [TODO_VIEW], destinationId: 'ijt-todo' }))
+        .then(() => ctx.globalState.update('ijt.todoMoved', true))
+        .catch(e => console.error('[intellij-toolbar] moveViews', e));
+    }
+  }
+
+  // Git: la pestaña "MultiGit" del panel (contenedor multigit-panel); sin MultiGit, Source Control.
+  const git = tw('ijt.tw.git', 'Git', 2, '$(source-control)', 'Git (⌘9)', 'workbench.view.extension.multigit-panel');
+  if (!vscode.extensions.getExtension('angelminga.multigit')) {
+    git.command = 'workbench.view.scm';
+    git.tooltip = 'Source Control (⌘0)';
+  }
+  git.show();
 
   const sessions = new Set();
 
