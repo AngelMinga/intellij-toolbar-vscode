@@ -9,7 +9,11 @@
         ],
         "editor.selectionHighlight": false,
         "editor.tabCompletion": "onlySnippets",
-        "editor.wordBasedSuggestions": "off"
+        "editor.wordBasedSuggestions": "off",
+        // Estilo IntelliJ: "Optimize imports" al guardar con ⌘S (ordena y quita imports sin usar; no corre con el autoguardado)
+        "editor.codeActionsOnSave": {
+            "source.organizeImports": "explicit"
+        }
     },
     "claudeCode.preferredLocation": "panel",
     "editor.linkedEditing": true,
@@ -144,6 +148,8 @@
     ],
     // Estilo IntelliJ: "Annotate" en línea (autor y fecha del último cambio de la línea actual)
     "git.blame.editorDecoration.enabled": true,
+    // Estilo IntelliJ: conflictos de merge en 3 paneles (tuyo | del otro | resultado)
+    "git.mergeEditor": true,
     // Estilo IntelliJ: "Sticky lines" (la cabecera de la clase o el método queda fija al hacer scroll)
     "editor.stickyScroll.enabled": true,
     // Estilo IntelliJ: guardar solo al cambiar de ventana o de archivo (el hot reload de Flutter sigue siendo con ⌘S)

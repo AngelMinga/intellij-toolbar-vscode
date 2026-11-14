@@ -110,6 +110,8 @@
     { "key": "shift+cmd+e", "command": "workbench.action.navigateBackInEditLocations" },
     // Search Everywhere (doble Shift): el mismo panel que la lupa de la barra.
     { "key": "shift shift", "command": "workbench.action.quickOpenWithModes" },
+    // Run Anything (doble ⌃): tareas del proyecto (.vscode/tasks.json).
+    { "key": "ctrl ctrl", "command": "workbench.action.tasks.runTask" },
     // Git (⌘9): log de MultiGit.
     { "key": "cmd+9", "command": "multigit.showLog" },
     // ⌘2 Bookmarks y ⌘8 Services (aquí: Run and Debug, con las sesiones activas), como IntelliJ.
