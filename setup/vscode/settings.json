@@ -169,6 +169,8 @@
     "editor.gotoLocation.multipleDefinitions": "peek",
     // Estilo IntelliJ: la ventana Run (Debug Console) se abre en cada ejecución
     "debug.internalConsoleOptions": "openOnSessionStart",
+    // Estilo IntelliJ: las configuraciones npm muestran su salida en la ventana Run (Debug Console), no en la Terminal
+    "runConfigurations.npmConsole": "internalConsole",
     // Estilo IntelliJ: guías del árbol de widgets de Flutter
     "dart.previewFlutterUiGuides": true,
     "dart.previewFlutterUiGuidesCustomTracking": true,
