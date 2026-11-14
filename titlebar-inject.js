@@ -156,26 +156,24 @@
     #ijt-rightstripe .ijt-rs-bottom { flex: none; margin-top: auto; background: var(--vscode-statusBar-background); }
     #ijt-rightstripe .ijt-toolwindows { border-top: none; margin: 0; padding: 8px 0; }
 
-    /* ---- Pestañas del editor al estilo Islands (IntelliJ): recuadro redondeado; la activa con borde azul
-       (EditorTabs.underlinedTabBackground #233558 / underlinedBorderColor #2E4D89), la activa de otro grupo en gris. */
-    .monaco-workbench .part.editor > .content .editor-group-container > .title .tabs-container > .tab {
-      height: calc(var(--editor-group-tab-height) - 8px) !important; margin: 4px 2px !important;
-      border-radius: 6px !important; border-right: none !important; background-clip: padding-box;
-    }
-    .monaco-workbench .part.editor > .content .editor-group-container > .title .tabs-container > .tab .tab-label {
-      line-height: calc(var(--editor-group-tab-height) - 8px) !important;
-    }
-    .monaco-workbench .part.editor > .content .editor-group-container > .title .tabs-container > .tab > .tab-divider,
-    .monaco-workbench .part.editor > .content .editor-group-container > .title .tabs-container > .tab > .tab-border-top-container,
-    .monaco-workbench .part.editor > .content .editor-group-container > .title .tabs-container > .tab > .tab-border-bottom-container {
+    /* ---- Pestañas del editor al estilo Islands (IntelliJ). Con las pestañas "modern UI" de VS Code
+       (.modern-ui-tabs, altura fija) la activa se dibuja con .tab-fill y bordes que la conectan al editor:
+       se da forma de recuadro redondeado a ese relleno (EditorTabs: fondo #233558, borde #2E4D89) y se
+       ocultan los bordes de conexión. La activa de otro grupo queda en gris. */
+    .monaco-workbench .part.editor .tabs-container > .tab > :is(.tab-connected-edge, .tab-connected-overflow-edge, .tab-connected-overflow-right-edge) {
       display: none !important;
     }
-    .monaco-workbench .part.editor > .content .editor-group-container > .title .tabs-container > .tab.active {
-      box-shadow: inset 0 0 0 1px #40434A;
+    .monaco-workbench .part.editor .tabs-container > .tab.active > .tab-fill::before,
+    .monaco-workbench .part.editor .tabs-container > .tab.active > .tab-fill::after { display: none !important; }
+    .monaco-workbench .part.editor .tabs-container > .tab.active > .tab-fill {
+      position: absolute !important; inset: 2px 1px !important; border-radius: 6px !important;
+      background: #26282C !important; box-shadow: inset 0 0 0 1px #40434A !important;
     }
-    .monaco-workbench .part.editor > .content .editor-group-container.active > .title .tabs-container > .tab.active {
-      background-color: #233558 !important; box-shadow: inset 0 0 0 1px #2E4D89;
+    .monaco-workbench .part.editor .editor-group-container.active .tabs-container > .tab.active > .tab-fill {
+      background: #233558 !important; box-shadow: inset 0 0 0 1px #2E4D89 !important;
     }
+    .monaco-workbench .part.editor .tabs-container > .tab { border-right: none !important; }
+    .monaco-workbench .part.editor .tabs-container > .tab > .tab-divider { display: none !important; }
 
     /* ---- Tooltip propio de las columnas (el de VS Code se posiciona mal fuera de su área) */
     #ijt-tooltip {
