@@ -434,7 +434,6 @@
     {
       "name": "Constants and enum members",
       "scope": [
-        "variable.other.constant",
         "variable.other.enummember",
         "constant.other",
         "support.constant"
@@ -728,6 +727,7 @@
     "comment": "#7A7E85",
     "*.deprecated": {
       "strikethrough": true
-    }
+    },
+    "variable.readonly": "#BCBEC4"
   }
 }

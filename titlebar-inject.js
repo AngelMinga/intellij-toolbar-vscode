@@ -12,22 +12,23 @@
   // Columna de ventanas de herramientas (pie de la barra de actividad, como IntelliJ) y el nombre de la
   // pestaña del panel inferior que corresponde a cada una (para resaltar la que está abierta).
   const TOOL_WINDOWS = [
-    { id: 'ijt.tw.run', tabs: ['Debug Console'] },
-    { id: 'ijt.tw.terminal', tabs: ['Terminal'] },
-    { id: 'ijt.tw.output', tabs: ['Output'] },
-    { id: 'ijt.tw.problems', tabs: ['Problems'] },
-    { id: 'ijt.tw.todo', tabs: ['TODO'] },
-    { id: 'ijt.tw.git', tabs: ['MultiGit', 'Source Control'] }
+    { id: 'ijt.tw.run', tabs: ['Debug Console'], tip: 'Run  ⌘4' },
+    { id: 'ijt.tw.terminal', tabs: ['Terminal'], tip: 'Terminal  ⌥F12' },
+    { id: 'ijt.tw.output', tabs: ['Output'], tip: 'Output' },
+    { id: 'ijt.tw.problems', tabs: ['Problems'], tip: 'Problems  ⌘6' },
+    { id: 'ijt.tw.todo', tabs: ['TODO'], tip: 'TODO' },
+    { id: 'ijt.tw.git', tabs: ['MultiGit', 'Source Control'], tip: 'Git  ⌘9' }
   ];
   // Columna derecha de IntelliJ: franja vertical en el borde derecho de la ventana. VS Code se acomoda
   // dejándole RIGHT_STRIPE_W px (ver reserveRightStripe). `close`: op del puente para cerrar al pulsar lo activo.
   const RIGHT_STRIPE_W = 36;
   const RIGHT_ITEMS = [
-    { id: 'ijt.rw.notifications', active: () => !!document.querySelector('.notifications-center.visible') },
-    { id: 'ijt.rw.devices', active: () => auxTitle().startsWith('PhonePane'), close: () => 'closeAuxiliaryBar' },
-    { id: 'ijt.rw.inspector', active: () => false },
+    { id: 'ijt.rw.notifications', tip: 'Notifications', active: () => !!document.querySelector('.notifications-center.visible') },
+    { id: 'ijt.rw.devices', tip: 'Running Devices', active: () => auxTitle().startsWith('PhonePane'), close: () => 'closeAuxiliaryBar' },
+    { id: 'ijt.rw.inspector', tip: 'Flutter Inspector', active: () => false },
     {
       id: 'ijt.rw.ai',
+      tip: 'AI Chat (Claude Code)',
       active: () => auxTitle().startsWith('Claude') || (activePanelTab() || '').startsWith('Claude'),
       close: () => (auxTitle().startsWith('Claude') ? 'closeAuxiliaryBar' : 'closePanel')
     }
@@ -154,6 +155,14 @@
     #ijt-rightstripe .ijt-rs-top { flex: none; background: var(--vscode-titleBar-activeBackground); -webkit-app-region: drag; }
     #ijt-rightstripe .ijt-rs-bottom { flex: none; margin-top: auto; background: var(--vscode-statusBar-background); }
     #ijt-rightstripe .ijt-toolwindows { border-top: none; margin: 0; padding: 8px 0; }
+
+    /* ---- Tooltip propio de las columnas (el de VS Code se posiciona mal fuera de su área) */
+    #ijt-tooltip {
+      position: fixed; z-index: 2700; pointer-events: none; white-space: nowrap;
+      padding: 4px 8px; border-radius: 6px; font-size: 12px; line-height: 16px;
+      box-shadow: 0 4px 12px rgba(0,0,0,.35); opacity: 0; transition: opacity .08s;
+    }
+    #ijt-tooltip.show { opacity: 1; }
 
     /* ---- Widget de inspecciones: arriba a la derecha del editor activo, como IntelliJ */
     .ijt-inspections-host { position: absolute; top: 4px; right: 18px; z-index: 10; pointer-events: none; }
@@ -447,6 +456,58 @@
     watchQuickInput();
   }
 
+  // ---- Tooltips de las columnas de ventanas. Se corta el "mouseover" para que VS Code no muestre el suyo
+  // (lo coloca hacia arriba y, en la columna derecha, fuera de lugar) y se muestra uno al costado del ícono.
+  let tipTimer = 0;
+  function tipFor(item) {
+    const all = TOOL_WINDOWS.concat(RIGHT_ITEMS);
+    const def = all.find(x => item.id.endsWith('.' + x.id));
+    return def && def.tip;
+  }
+  function hideTip() {
+    clearTimeout(tipTimer);
+    const t = document.getElementById('ijt-tooltip');
+    if (t) t.classList.remove('show');
+  }
+  function showTip(item, side) {
+    const text = tipFor(item);
+    if (!text) return;
+    let t = document.getElementById('ijt-tooltip');
+    if (!t) { t = document.createElement('div'); t.id = 'ijt-tooltip'; document.body.appendChild(t); }
+    const wb = document.querySelector('.monaco-workbench');
+    if (wb) {
+      const cs = getComputedStyle(wb);
+      t.style.background = cs.getPropertyValue('--vscode-editorHoverWidget-background') || '#26282C';
+      t.style.color = cs.getPropertyValue('--vscode-editorHoverWidget-foreground') || cs.getPropertyValue('--vscode-foreground') || '#D1D3D9';
+      t.style.border = '1px solid ' + (cs.getPropertyValue('--vscode-editorHoverWidget-border') || '#33353B');
+      t.style.fontFamily = cs.getPropertyValue('font-family');
+    }
+    t.textContent = text;
+    const r = item.getBoundingClientRect();
+    const tr = t.getBoundingClientRect();
+    t.style.top = Math.round(r.top + r.height / 2 - tr.height / 2) + 'px';
+    t.style.left = Math.round(side === 'left' ? r.left - tr.width - 8 : r.right + 8) + 'px';
+    t.classList.add('show');
+  }
+  function wireTips(host, side) {
+    if (host.dataset.ijtTips) return;
+    host.dataset.ijtTips = '1';
+    host.addEventListener('mouseover', e => {
+      e.stopPropagation();
+      const item = e.target.closest && e.target.closest('.statusbar-item');
+      if (!item) return;
+      clearTimeout(tipTimer);
+      tipTimer = setTimeout(() => showTip(item, side), 350);
+    }, true);
+    host.addEventListener('mouseout', e => {
+      const to = e.relatedTarget;
+      const item = e.target.closest && e.target.closest('.statusbar-item');
+      if (item && to && item.contains(to)) return;
+      hideTip();
+    }, true);
+    host.addEventListener('mousedown', hideTip, true);
+  }
+
   function ensureToolWindowsHost() {
     const content = document.querySelector('.part.activitybar > .content');
     if (!content) return null;
@@ -455,6 +516,7 @@
       host = document.createElement('div');
       host.className = 'ijt-toolwindows';
       host.addEventListener('click', onToolWindowClick, true);
+      wireTips(host, 'right');
     }
     // Justo después de los íconos de arriba (composite-bar): queda al pie, sobre Cuentas y Ajustes.
     const bar = content.querySelector(':scope > .composite-bar');
@@ -513,6 +575,7 @@
       el.id = 'ijt-rightstripe';
       el.innerHTML = '<div class="ijt-rs-top"></div><div class="ijt-toolwindows ijt-rs-items"></div><div class="ijt-rs-bottom"></div>';
       el.addEventListener('click', onRightStripeClick, true);
+      wireTips(el, 'left');
       document.body.appendChild(el);
       reserveRightStripe();
     }
