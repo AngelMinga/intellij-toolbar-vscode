@@ -503,7 +503,7 @@
       }
     },
     {
-      "name": "Fields / properties",
+      "name": "Property access (plain, as IntelliJ)",
       "scope": [
         "variable.other.property",
         "variable.other.object.property",
@@ -511,7 +511,7 @@
         "support.variable.property"
       ],
       "settings": {
-        "foreground": "#C77DBB"
+        "foreground": "#BCBEC4"
       }
     },
     {
@@ -697,7 +697,7 @@
       "foreground": "#C77DBB",
       "italic": true
     },
-    "property": "#C77DBB",
+    "property": "#BCBEC4",
     "property.static": {
       "foreground": "#C77DBB",
       "italic": true
@@ -708,11 +708,10 @@
     },
     "function": "#BCBEC4",
     "function.declaration": "#56A8F5",
-    "method": "#57AAF7",
+    "method": "#BCBEC4",
     "method.declaration": "#56A8F5",
     "method.static": {
-      "foreground": "#57AAF7",
-      "italic": true
+      "foreground": "#BCBEC4"
     },
     "method.static.declaration": {
       "foreground": "#56A8F5",
@@ -728,6 +727,39 @@
     "*.deprecated": {
       "strikethrough": true
     },
-    "variable.readonly": "#BCBEC4"
+    "variable.readonly": "#BCBEC4",
+    "property.declaration": "#C77DBB",
+    "property.static.declaration": {
+      "foreground": "#C77DBB",
+      "italic": true
+    },
+    "function.declaration.readonly:javascript": "#BCBEC4",
+    "property.declaration:javascript": "#BCBEC4",
+    "property:javascript": "#BCBEC4",
+    "variable.defaultLibrary:javascript": {
+      "foreground": "#C77DBB",
+      "italic": true
+    },
+    "function.declaration.readonly:javascriptreact": "#BCBEC4",
+    "property.declaration:javascriptreact": "#BCBEC4",
+    "property:javascriptreact": "#BCBEC4",
+    "variable.defaultLibrary:javascriptreact": {
+      "foreground": "#C77DBB",
+      "italic": true
+    },
+    "function.declaration.readonly:typescript": "#BCBEC4",
+    "property.declaration:typescript": "#BCBEC4",
+    "property:typescript": "#BCBEC4",
+    "variable.defaultLibrary:typescript": {
+      "foreground": "#C77DBB",
+      "italic": true
+    },
+    "function.declaration.readonly:typescriptreact": "#BCBEC4",
+    "property.declaration:typescriptreact": "#BCBEC4",
+    "property:typescriptreact": "#BCBEC4",
+    "variable.defaultLibrary:typescriptreact": {
+      "foreground": "#C77DBB",
+      "italic": true
+    }
   }
 }
