@@ -34,6 +34,53 @@ async function repoOrThrow() {
   return repo;
 }
 
+// ---- Varios repositorios (como IntelliJ "Execute branch operations on all roots")
+
+/** Repositorios sobre los que actúan las operaciones de rama: todos si la sincronización está activa. */
+async function targetRepos() {
+  const api = await menus.gitApiAsync();
+  const current = menus.currentRepo(api);
+  if (!current) throw new Error('No hay un repositorio Git abierto.');
+  const sync = vscode.workspace.getConfiguration('intellijToolbar').get('syncBranchOperations', true);
+  if (!sync || api.repositories.length < 2) return [current];
+  // El actual primero, para que sus errores se vean antes.
+  return [current, ...api.repositories.filter(r => r !== current)];
+}
+
+const repoName = repo => path.basename(repo.rootUri.fsPath);
+
+async function hasRef(repo, ref, remote) {
+  const refs = await repo.getRefs({ pattern: remote ? `refs/remotes/${ref}` : `refs/heads/${ref}` });
+  return refs.some(r => r.name === ref);
+}
+
+/**
+ * Ejecuta `fn` en cada repositorio (opcionalmente solo en los que tienen `needRef`) y muestra un resumen:
+ * en cuántos se hizo, cuáles no tienen la rama y cuáles fallaron.
+ */
+async function forEachRepo(title, repos, fn, needRef) {
+  const done = [], skipped = [], failed = [];
+  await withProgress(title, async progress => {
+    for (const repo of repos) {
+      const name = repoName(repo);
+      progress.report({ message: name });
+      if (needRef && !(await needRef(repo))) { skipped.push(name); continue; }
+      try { await fn(repo); done.push(name); }
+      catch (e) { failed.push(`${name}: ${(e && (e.stderr || e.message)) || e}`.split('\n')[0]); }
+      await refresh(repo);
+    }
+  });
+  if (repos.length < 2) {
+    if (failed.length) throw new Error(failed[0].replace(/^[^:]+: /, ''));
+    return { done, skipped, failed };
+  }
+  const parts = [`${title.replace(/…$/, '')}: ${done.length} de ${repos.length} repositorios.`];
+  if (skipped.length) parts.push(`Sin la rama: ${skipped.join(', ')}.`);
+  if (failed.length) parts.push(`Con error: ${failed.join(' · ')}`);
+  (failed.length ? vscode.window.showWarningMessage : vscode.window.showInformationMessage)(parts.join(' '));
+  return { done, skipped, failed };
+}
+
 function splitRemote(ref) {
   const i = ref.indexOf('/');
   return { remote: ref.slice(0, i), branch: ref.slice(i + 1) };
@@ -58,14 +105,23 @@ async function getBranches() {
   const repo = await repoOrThrow();
   const root = repo.rootUri.fsPath;
   const head = repo.state.HEAD ? (repo.state.HEAD.name || null) : null;
-  const refs = await repo.getRefs({ sort: 'committerdate' });
-  const locals = refs.filter(r => r.type === 0 && r.name);
-  const remotes = refs.filter(r => r.type === 1 && r.name && !r.name.endsWith('/HEAD')).map(r => r.name);
+  const repos = await targetRepos();
+  // Ramas de todos los repositorios (sin duplicados); los datos de seguimiento salen del primero que la tenga.
+  const seen = new Map(), remoteSet = new Set();
+  for (const r of repos) {
+    const refs = await r.getRefs({ sort: 'committerdate' });
+    for (const x of refs) {
+      if (x.type === 0 && x.name && !seen.has(x.name)) seen.set(x.name, { ref: x, repo: r });
+      if (x.type === 1 && x.name && !x.name.endsWith('/HEAD')) remoteSet.add(x.name);
+    }
+  }
+  const locals = [...seen.values()].map(v => ({ ...v.ref, _repo: v.repo }));
+  const remotes = [...remoteSet];
   const localNames = new Set(locals.map(r => r.name));
 
   const local = await Promise.all(locals.map(async r => {
     let d = {};
-    try { d = await repo.getBranch(r.name); } catch { /* ignore */ }
+    try { d = await (r._repo || repo).getBranch(r.name); } catch { /* ignore */ }
     return {
       name: r.name,
       upstream: d.upstream ? `${d.upstream.remote}/${d.upstream.name}` : null,
@@ -77,7 +133,7 @@ async function getBranches() {
   const recent = await menus.recentBranches(root, localNames, 5);
   if (head && localNames.has(head) && !recent.includes(head)) recent.unshift(head);
 
-  return { head, root: path.basename(root), recent, local, remote: remotes };
+  return { head, root: path.basename(root), recent, local, remote: remotes, repos: repos.length };
 }
 
 // ------------------------------------------------------------------ acciones
@@ -92,7 +148,11 @@ async function checkoutRef(repo, ref, remote) {
 }
 
 const OPS = {
-  update: () => vscode.commands.executeCommand('git.pull'),
+  update: async () => {
+    const repos = await targetRepos();
+    if (repos.length < 2) return vscode.commands.executeCommand('git.pull');
+    await forEachRepo('Update Project…', repos, r => r.pull());
+  },
   commit: () => vscode.commands.executeCommand('workbench.view.scm'),
   push: () => vscode.commands.executeCommand('git.push'),
   fetch: async () => { const repo = await repoOrThrow(); await withProgress('git fetch…', () => repo.fetch()); },
@@ -103,22 +163,35 @@ const OPS = {
   closePanel: () => vscode.commands.executeCommand('workbench.action.closePanel'),
   closeAuxiliaryBar: () => vscode.commands.executeCommand('workbench.action.closeAuxiliaryBar'),
 
-  newBranch: async ({ ref }) => menus.newBranch(await repoOrThrow(), ref || undefined),
+  newBranch: async ({ ref }) => {
+    const repos = await targetRepos();
+    if (repos.length < 2) return menus.newBranch(repos[0], ref || undefined);
+    const name = await vscode.window.showInputBox({
+      prompt: ref ? `Nueva rama desde '${ref}' en todos los repositorios` : 'Nueva rama desde la actual, en todos los repositorios',
+      placeHolder: 'feature/mi-rama',
+      validateInput: v => /^[^\s~^:?*[\\]+$/.test(v || '') ? undefined : 'Nombre de rama inválido'
+    });
+    if (!name) return;
+    const remote = !!ref && /^[^/]+\//.test(ref) && !(await hasRef(repos[0], ref, false));
+    await forEachRepo(`Nueva rama ${name}…`, repos, r => r.createBranch(name, true, ref || undefined),
+      ref ? r => hasRef(r, ref, remote) : undefined);
+  },
 
   checkout: async ({ ref, remote }) => {
-    const repo = await repoOrThrow();
-    await withProgress(`Checkout ${ref}…`, () => checkoutRef(repo, ref, remote));
+    const repos = await targetRepos();
+    const local = remote ? splitRemote(ref).branch : ref;
+    await forEachRepo(`Checkout ${local}…`, repos, r => checkoutRef(r, ref, remote),
+      async r => (await hasRef(r, ref, remote)) || (remote && (await hasRef(r, local, false))));
   },
 
   checkoutRebase: async ({ ref, remote }) => {
-    const repo = await repoOrThrow();
-    const head = repo.state.HEAD && repo.state.HEAD.name;
-    if (!head) throw new Error('No hay una rama actual.');
-    await withProgress(`Checkout ${ref} y rebase sobre ${head}…`, async () => {
-      await checkoutRef(repo, ref, remote);
-      await runGit(repo.rootUri.fsPath, ['rebase', head]);
-    });
-    await refresh(repo);
+    const repos = await targetRepos();
+    await forEachRepo(`Checkout ${ref} y rebase…`, repos, async r => {
+      const head = r.state.HEAD && r.state.HEAD.name;
+      if (!head) throw new Error('No hay una rama actual.');
+      await checkoutRef(r, ref, remote);
+      await runGit(r.rootUri.fsPath, ['rebase', head]);
+    }, r => hasRef(r, ref, remote));
   },
 
   compare: async ({ ref }) => {
@@ -140,15 +213,13 @@ const OPS = {
     await showText(out || `Sin diferencias entre '${ref}' y el working tree.\n`, 'diff');
   },
 
-  rebaseOnto: async ({ ref }) => {
-    const repo = await repoOrThrow();
-    await withProgress(`Rebase sobre ${ref}…`, () => runGit(repo.rootUri.fsPath, ['rebase', ref]));
-    await refresh(repo);
+  rebaseOnto: async ({ ref, remote }) => {
+    await forEachRepo(`Rebase sobre ${ref}…`, await targetRepos(), r => runGit(r.rootUri.fsPath, ['rebase', ref]),
+      r => hasRef(r, ref, remote));
   },
 
-  merge: async ({ ref }) => {
-    const repo = await repoOrThrow();
-    await withProgress(`Merge ${ref}…`, () => repo.merge(ref));
+  merge: async ({ ref, remote }) => {
+    await forEachRepo(`Merge ${ref}…`, await targetRepos(), r => r.merge(ref), r => hasRef(r, ref, remote));
   },
 
   worktreeFrom: async ({ ref, remote }) => {
@@ -165,17 +236,15 @@ const OPS = {
   },
 
   pullRebase: async ({ ref }) => {
-    const repo = await repoOrThrow();
     const { remote, branch } = splitRemote(ref);
-    await withProgress(`Pull ${ref} (rebase)…`, () => runGit(repo.rootUri.fsPath, ['pull', '--rebase', remote, branch]));
-    await refresh(repo);
+    await forEachRepo(`Pull ${ref} (rebase)…`, await targetRepos(),
+      r => runGit(r.rootUri.fsPath, ['pull', '--rebase', remote, branch]), r => hasRef(r, ref, true));
   },
 
   pullMerge: async ({ ref }) => {
-    const repo = await repoOrThrow();
     const { remote, branch } = splitRemote(ref);
-    await withProgress(`Pull ${ref} (merge)…`, () => runGit(repo.rootUri.fsPath, ['pull', '--no-rebase', remote, branch]));
-    await refresh(repo);
+    await forEachRepo(`Pull ${ref} (merge)…`, await targetRepos(),
+      r => runGit(r.rootUri.fsPath, ['pull', '--no-rebase', remote, branch]), r => hasRef(r, ref, true));
   },
 
   delete: async ({ ref, remote }) => {
@@ -189,16 +258,20 @@ const OPS = {
       await refresh(repo);
       return;
     }
-    const ok = await vscode.window.showWarningMessage(`¿Eliminar la rama local '${ref}'?`, { modal: true }, 'Eliminar');
+    const repos = await targetRepos();
+    const where = repos.length > 1 ? ' en todos los repositorios que la tengan' : '';
+    const ok = await vscode.window.showWarningMessage(`¿Eliminar la rama local '${ref}'${where}?`, { modal: true }, 'Eliminar');
     if (!ok) return;
-    try {
-      await repo.deleteBranch(ref, false);
-    } catch (e) {
-      const force = await vscode.window.showWarningMessage(
-        `'${ref}' no está fusionada. ¿Eliminarla de todas formas? Se perderán sus commits no fusionados.`,
-        { modal: true }, 'Forzar eliminación');
-      if (force) await repo.deleteBranch(ref, true);
-    }
+    const unmerged = [];
+    await forEachRepo(`Eliminar ${ref}…`, repos, async r => {
+      try { await r.deleteBranch(ref, false); }
+      catch (e) { unmerged.push(r); throw new Error('no está fusionada'); }
+    }, r => hasRef(r, ref, false));
+    if (!unmerged.length) return;
+    const force = await vscode.window.showWarningMessage(
+      `'${ref}' no está fusionada en: ${unmerged.map(repoName).join(', ')}. ¿Eliminarla de todas formas? Se perderán sus commits no fusionados.`,
+      { modal: true }, 'Forzar eliminación');
+    if (force) await forEachRepo(`Eliminar ${ref} (forzado)…`, unmerged, r => r.deleteBranch(ref, true));
   }
 };
 
