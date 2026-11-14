@@ -566,7 +566,10 @@
       "name": "XML / HTML tags",
       "scope": [
         "entity.name.tag",
-        "punctuation.definition.tag"
+        "punctuation.definition.tag",
+        "support.class.component",
+        "support.class.component.jsx",
+        "support.class.component.tsx"
       ],
       "settings": {
         "foreground": "#D5B778"
@@ -681,23 +684,14 @@
     "class": "#BCBEC4",
     "enum": "#BCBEC4",
     "interface": "#BCBEC4",
-    "mixin": "#BCBEC4",
-    "typeAlias": "#BCBEC4",
+    "struct": "#BCBEC4",
     "type": "#BCBEC4",
-    "extensionType": "#BCBEC4",
-    "typeParameter": "#16BAAC",
+    "typeAlias": "#BCBEC4",
     "namespace": "#BCBEC4",
+    "typeParameter": "#16BAAC",
     "parameter": "#BCBEC4",
     "variable": "#BCBEC4",
-    "variable.static": {
-      "foreground": "#C77DBB",
-      "italic": true
-    },
-    "variable.readonly.static": {
-      "foreground": "#C77DBB",
-      "italic": true
-    },
-    "property": "#BCBEC4",
+    "property": "#C77DBB",
     "property.static": {
       "foreground": "#C77DBB",
       "italic": true
@@ -709,109 +703,227 @@
     "function": "#BCBEC4",
     "function.declaration": "#56A8F5",
     "method": "#BCBEC4",
-    "method.declaration": "#56A8F5",
+    "method.declaration": "#57AAF7",
     "method.static": {
-      "foreground": "#BCBEC4"
-    },
-    "method.static.declaration": {
-      "foreground": "#56A8F5",
+      "foreground": "#57AAF7",
       "italic": true
     },
     "annotation": "#B3AE60",
     "decorator": "#B3AE60",
+    "macro": "#B3AE60",
     "keyword": "#CF8E6D",
-    "label": "#BCBEC4",
     "string": "#6AAB73",
     "number": "#2AACB8",
+    "regexp": "#42C3D4",
     "comment": "#7A7E85",
+    "label": "#BCBEC4",
     "*.deprecated": {
       "strikethrough": true
     },
-    "variable.readonly": "#BCBEC4",
-    "property.declaration": "#C77DBB",
-    "property.static.declaration": {
+    "class:dart": "#BCBEC4",
+    "enum:dart": "#BCBEC4",
+    "mixin:dart": "#BCBEC4",
+    "typeAlias:dart": "#BCBEC4",
+    "extension:dart": "#BCBEC4",
+    "extensionType:dart": "#BCBEC4",
+    "typeParameter:dart": "#BCBEC4",
+    "property:dart": "#C77DBB",
+    "property.static:dart": {
       "foreground": "#C77DBB",
       "italic": true
     },
-    "function.declaration.readonly:javascript": "#BCBEC4",
-    "property.declaration:javascript": "#BCBEC4",
-    "property:javascript": "#BCBEC4",
-    "variable.defaultLibrary:javascript": {
+    "enumMember:dart": {
       "foreground": "#C77DBB",
+      "italic": false
+    },
+    "method:dart": "#BCBEC4",
+    "method.declaration:dart": "#57AAF7",
+    "method.static:dart": {
+      "foreground": "#57AAF7",
       "italic": true
     },
-    "function.declaration.readonly:javascriptreact": "#BCBEC4",
-    "property.declaration:javascriptreact": "#BCBEC4",
-    "property:javascriptreact": "#BCBEC4",
-    "variable.defaultLibrary:javascriptreact": {
-      "foreground": "#C77DBB",
+    "method.static.declaration:dart": {
+      "foreground": "#57AAF7",
       "italic": true
     },
-    "function.declaration.readonly:typescript": "#BCBEC4",
-    "property.declaration:typescript": "#BCBEC4",
-    "property:typescript": "#BCBEC4",
-    "variable.defaultLibrary:typescript": {
-      "foreground": "#C77DBB",
-      "italic": true
-    },
-    "function.declaration.readonly:typescriptreact": "#BCBEC4",
-    "property.declaration:typescriptreact": "#BCBEC4",
-    "property:typescriptreact": "#BCBEC4",
-    "variable.defaultLibrary:typescriptreact": {
-      "foreground": "#C77DBB",
-      "italic": true
-    },
-    "function:javascript": "#56A8F5",
-    "function.local:javascript": "#BCBEC4",
-    "function.local.readonly:javascript": "#BCBEC4",
+    "function:dart": "#BCBEC4",
+    "function.declaration:dart": "#56A8F5",
+    "variable:dart": "#BCBEC4",
+    "parameter:dart": "#BCBEC4",
+    "variable.static:dart": "#BCBEC4",
+    "annotation:dart": "#B3AE60",
+    "keyword:dart": "#CF8E6D",
+    "class:javascript": "#BCBEC4",
+    "interface:javascript": "#BCBEC4",
+    "typeAlias:javascript": "#BCBEC4",
+    "type:javascript": "#BCBEC4",
+    "namespace:javascript": "#BCBEC4",
+    "typeParameter:javascript": "#BCBEC4",
+    "parameter:javascript": "#BCBEC4",
     "variable:javascript": {
-      "foreground": "#C77DBB",
+      "foreground": "#C77DBA",
       "italic": true
     },
     "variable.readonly:javascript": {
-      "foreground": "#C77DBB",
+      "foreground": "#C77DBA",
       "italic": true
     },
     "variable.local:javascript": "#BCBEC4",
     "variable.local.readonly:javascript": "#BCBEC4",
-    "function:javascriptreact": "#56A8F5",
-    "function.local:javascriptreact": "#BCBEC4",
-    "function.local.readonly:javascriptreact": "#BCBEC4",
-    "variable:javascriptreact": {
+    "variable.defaultLibrary:javascript": {
+      "foreground": "#C77DBA",
+      "italic": true
+    },
+    "property:javascript": "#BCBEC4",
+    "property.declaration:javascript": "#BCBEC4",
+    "property.static:javascript": {
       "foreground": "#C77DBB",
       "italic": true
     },
-    "variable.readonly:javascriptreact": {
+    "function:javascript": "#56A8F5",
+    "function.local:javascript": "#56A8F5",
+    "function.readonly:javascript": "#56A8F5",
+    "function.local.readonly:javascript": "#BCBEC4",
+    "function.declaration.readonly:javascript": "#BCBEC4",
+    "method:javascript": "#56A8F5",
+    "method.defaultLibrary:javascript": "#BCBEC4",
+    "method.static:javascript": {
+      "foreground": "#57AAF7",
+      "italic": true
+    },
+    "enumMember:javascript": {
       "foreground": "#C77DBB",
+      "italic": true
+    },
+    "decorator:javascript": "#B3AE60",
+    "class:javascriptreact": "#BCBEC4",
+    "interface:javascriptreact": "#BCBEC4",
+    "typeAlias:javascriptreact": "#BCBEC4",
+    "type:javascriptreact": "#BCBEC4",
+    "namespace:javascriptreact": "#BCBEC4",
+    "typeParameter:javascriptreact": "#BCBEC4",
+    "parameter:javascriptreact": "#BCBEC4",
+    "variable:javascriptreact": {
+      "foreground": "#C77DBA",
+      "italic": true
+    },
+    "variable.readonly:javascriptreact": {
+      "foreground": "#C77DBA",
       "italic": true
     },
     "variable.local:javascriptreact": "#BCBEC4",
     "variable.local.readonly:javascriptreact": "#BCBEC4",
-    "function:typescript": "#56A8F5",
-    "function.local:typescript": "#BCBEC4",
-    "function.local.readonly:typescript": "#BCBEC4",
-    "variable:typescript": {
+    "variable.defaultLibrary:javascriptreact": {
+      "foreground": "#C77DBA",
+      "italic": true
+    },
+    "property:javascriptreact": "#BCBEC4",
+    "property.declaration:javascriptreact": "#BCBEC4",
+    "property.static:javascriptreact": {
       "foreground": "#C77DBB",
       "italic": true
     },
-    "variable.readonly:typescript": {
+    "function:javascriptreact": "#56A8F5",
+    "function.local:javascriptreact": "#56A8F5",
+    "function.readonly:javascriptreact": "#56A8F5",
+    "function.local.readonly:javascriptreact": "#BCBEC4",
+    "function.declaration.readonly:javascriptreact": "#BCBEC4",
+    "method:javascriptreact": "#56A8F5",
+    "method.defaultLibrary:javascriptreact": "#BCBEC4",
+    "method.static:javascriptreact": {
+      "foreground": "#57AAF7",
+      "italic": true
+    },
+    "enumMember:javascriptreact": {
       "foreground": "#C77DBB",
+      "italic": true
+    },
+    "decorator:javascriptreact": "#B3AE60",
+    "class:typescript": "#BCBEC4",
+    "interface:typescript": "#BCBEC4",
+    "typeAlias:typescript": "#BCBEC4",
+    "type:typescript": "#BCBEC4",
+    "namespace:typescript": "#BCBEC4",
+    "typeParameter:typescript": "#BCBEC4",
+    "parameter:typescript": "#BCBEC4",
+    "variable:typescript": {
+      "foreground": "#C77DBA",
+      "italic": true
+    },
+    "variable.readonly:typescript": {
+      "foreground": "#C77DBA",
       "italic": true
     },
     "variable.local:typescript": "#BCBEC4",
     "variable.local.readonly:typescript": "#BCBEC4",
-    "function:typescriptreact": "#56A8F5",
-    "function.local:typescriptreact": "#BCBEC4",
-    "function.local.readonly:typescriptreact": "#BCBEC4",
-    "variable:typescriptreact": {
+    "variable.defaultLibrary:typescript": {
+      "foreground": "#C77DBA",
+      "italic": true
+    },
+    "property:typescript": "#BCBEC4",
+    "property.declaration:typescript": "#BCBEC4",
+    "property.static:typescript": {
       "foreground": "#C77DBB",
+      "italic": true
+    },
+    "function:typescript": "#56A8F5",
+    "function.local:typescript": "#56A8F5",
+    "function.readonly:typescript": "#56A8F5",
+    "function.local.readonly:typescript": "#BCBEC4",
+    "function.declaration.readonly:typescript": "#BCBEC4",
+    "method:typescript": "#56A8F5",
+    "method.defaultLibrary:typescript": "#BCBEC4",
+    "method.static:typescript": {
+      "foreground": "#57AAF7",
+      "italic": true
+    },
+    "enumMember:typescript": {
+      "foreground": "#C77DBB",
+      "italic": true
+    },
+    "decorator:typescript": "#B3AE60",
+    "class:typescriptreact": "#BCBEC4",
+    "interface:typescriptreact": "#BCBEC4",
+    "typeAlias:typescriptreact": "#BCBEC4",
+    "type:typescriptreact": "#BCBEC4",
+    "namespace:typescriptreact": "#BCBEC4",
+    "typeParameter:typescriptreact": "#BCBEC4",
+    "parameter:typescriptreact": "#BCBEC4",
+    "variable:typescriptreact": {
+      "foreground": "#C77DBA",
       "italic": true
     },
     "variable.readonly:typescriptreact": {
-      "foreground": "#C77DBB",
+      "foreground": "#C77DBA",
       "italic": true
     },
     "variable.local:typescriptreact": "#BCBEC4",
-    "variable.local.readonly:typescriptreact": "#BCBEC4"
+    "variable.local.readonly:typescriptreact": "#BCBEC4",
+    "variable.defaultLibrary:typescriptreact": {
+      "foreground": "#C77DBA",
+      "italic": true
+    },
+    "property:typescriptreact": "#BCBEC4",
+    "property.declaration:typescriptreact": "#BCBEC4",
+    "property.static:typescriptreact": {
+      "foreground": "#C77DBB",
+      "italic": true
+    },
+    "function:typescriptreact": "#56A8F5",
+    "function.local:typescriptreact": "#56A8F5",
+    "function.readonly:typescriptreact": "#56A8F5",
+    "function.local.readonly:typescriptreact": "#BCBEC4",
+    "function.declaration.readonly:typescriptreact": "#BCBEC4",
+    "method:typescriptreact": "#56A8F5",
+    "method.defaultLibrary:typescriptreact": "#BCBEC4",
+    "method.static:typescriptreact": {
+      "foreground": "#57AAF7",
+      "italic": true
+    },
+    "enumMember:typescriptreact": {
+      "foreground": "#C77DBB",
+      "italic": true
+    },
+    "decorator:typescriptreact": "#B3AE60"
   }
 }
