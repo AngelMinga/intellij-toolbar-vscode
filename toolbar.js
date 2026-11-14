@@ -55,9 +55,11 @@ function register(ctx) {
   const TODO_VIEW = 'todo-tree-view';
   if (vscode.extensions.getExtension('Gruntfuggly.todo-tree')) {
     todo.show();
-    if (!ctx.globalState.get('ijt.todoMoved')) {
-      Promise.resolve(vscode.commands.executeCommand('vscode.moveViews', { viewIds: [TODO_VIEW], destinationId: 'ijt-todo' }))
-        .then(() => ctx.globalState.update('ijt.todoMoved', true))
+    // VS Code registra el contenedor del package.json ("ijt-todo") con el id "workbench.view.extension.ijt-todo";
+    // vscode.moveViews necesita ese id completo. Clave v2: la v1 se marcó sin haber movido nada.
+    if (!ctx.globalState.get('ijt.todoMoved.v2')) {
+      Promise.resolve(vscode.commands.executeCommand('vscode.moveViews', { viewIds: [TODO_VIEW], destinationId: 'workbench.view.extension.ijt-todo' }))
+        .then(() => ctx.globalState.update('ijt.todoMoved.v2', true))
         .catch(e => console.error('[intellij-toolbar] moveViews', e));
     }
   }
