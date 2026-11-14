@@ -69,7 +69,13 @@
     .ijt-right ${DEVICE_SEL} > a .codicon-warning { color: #e5c07b; }
     .ijt-right .ijt-chev { font-size: 12px !important; opacity: .75; margin-left: 2px; }
     .ijt-right ${SELECTOR_SEL} { margin-left: 4px; }
-    .ijt-right ${SELECTOR_SEL} > a { max-width: 220px; }
+    /* Una sola línea con "…" si el nombre no cabe; la flecha ⌄ va fuera del texto para que nunca se corte. */
+    .ijt-right ${SELECTOR_SEL} > a {
+      display: block !important; max-width: 220px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .ijt-right ${SELECTOR_SEL} > a .codicon { vertical-align: -2px; margin-right: 4px; }
+    .ijt-right ${SELECTOR_SEL} > a .codicon-chevron-down { display: none !important; }
+    .ijt-right ${DEVICE_SEL} > a .codicon-chevron-down { display: none !important; }
     /* Configuraciones Flutter: el ícono device-mobile se reemplaza por el logo de Flutter */
     .ijt-right ${SELECTOR_SEL} .codicon-device-mobile {
       width: 14px; height: 14px; background: ${FLUTTER_SVG} center / 14px 14px no-repeat;
@@ -384,7 +390,7 @@
     const right = ensureHost('right');
     if (right) {
       for (const el of placeItems(right, RIGHT_IDS)) {
-        if (/\.runConfigurations\.device$/.test(el.id)) decorateDevice(el);
+        if (/\.runConfigurations\.(device|selector)$/.test(el.id)) decorateDevice(el);
       }
     }
     const tw = ensureToolWindowsHost();
