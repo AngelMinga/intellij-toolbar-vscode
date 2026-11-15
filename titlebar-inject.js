@@ -276,11 +276,20 @@
     return host;
   }
 
+  // Caché sufijo de id → item de la barra de estado. `[id$=…]` recorre todo el documento, así que se
+  // busca solo si el elemento guardado ya no está en el DOM (VS Code lo recrea al ocultar/mostrar).
+  const itemCache = new Map();
+  function findItem(suffix) {
+    const cached = itemCache.get(suffix);
+    if (cached && cached.isConnected) return cached;
+    const el = document.querySelector(`.statusbar-item[id$=".${suffix}"]`);
+    if (el) itemCache.set(suffix, el); else itemCache.delete(suffix);
+    return el;
+  }
+
   // Coloca en el host los items presentes, en el orden de `ids`.
   function placeItems(host, ids) {
-    const present = ids
-      .map(suffix => document.querySelector(`.statusbar-item[id$=".${suffix}"]`))
-      .filter(Boolean);
+    const present = ids.map(findItem).filter(Boolean);
     present.forEach((el, idx) => {
       if (host.children[idx] !== el) host.insertBefore(el, host.children[idx] || null);
     });
@@ -346,7 +355,7 @@
   function dbg(ev, data) {
     if (dbgBudget <= 0) return;
     dbgBudget--;
-    const info = bridgeInfo(document.querySelector('.statusbar-item[id$=".ijt.branchMenu"]'));
+    const info = bridgeInfo(findItem('ijt.branchMenu'));
     if (!info) return;
     fetch(`http://127.0.0.1:${info.port}/log`, {
       method: 'POST', headers: { 'x-ijt-token': info.token, 'content-type': 'application/json' },
@@ -556,8 +565,8 @@
   function refreshToolWindows() {
     const tab = activePanelTab();
     for (const t of TOOL_WINDOWS) {
-      const el = document.querySelector(`.ijt-toolwindows .statusbar-item[id$=".${t.id}"]`);
-      if (!el) continue;
+      const el = findItem(t.id);
+      if (!el || !el.closest('.ijt-toolwindows')) continue;
       const on = !!tab && t.tabs.some(name => tab.startsWith(name));
       if (el.classList.contains('ijt-active') !== on) el.classList.toggle('ijt-active', on);
     }
@@ -588,7 +597,7 @@
   function ensureRightStripe() {
     let el = document.getElementById('ijt-rightstripe');
     if (!el) {
-      const any = RIGHT_ITEMS.some(r => document.querySelector(`.statusbar-item[id$=".${r.id}"]`));
+      const any = RIGHT_ITEMS.some(r => findItem(r.id));
       if (!any) return null;
       el = document.createElement('div');
       el.id = 'ijt-rightstripe';
@@ -602,11 +611,20 @@
   }
 
   // Colores del tema (definidos en .monaco-workbench) y alto de barra de título / barra de estado.
+  // Los colores solo se vuelven a copiar si el tema pudo cambiar (clase del workbench o <style> del
+  // <head>) o, por si acaso, cada ~5 s: getComputedStyle + leer las variables cada 400 ms es caro.
+  let themeDirty = true;
+  let themeTick = 0;
+  function setHeight(node, px) {
+    if (node && node.style.height !== px) node.style.height = px;
+  }
   function refreshRightStripe() {
     const el = document.getElementById('ijt-rightstripe');
     if (!el) return;
     const wb = document.querySelector('.monaco-workbench');
-    if (wb) {
+    if (++themeTick >= 12) { themeTick = 0; themeDirty = true; }
+    if (wb && themeDirty) {
+      themeDirty = false;
       const cs = getComputedStyle(wb);
       for (const v of STRIPE_VARS) {
         const val = cs.getPropertyValue(v);
@@ -617,8 +635,8 @@
     const sb = document.querySelector('.part.statusbar');
     const top = tb ? Math.round(tb.getBoundingClientRect().bottom) : 0;
     const bottom = sb && sb.getClientRects().length ? Math.round(sb.getBoundingClientRect().height) : 0;
-    el.querySelector('.ijt-rs-top').style.height = top + 'px';
-    el.querySelector('.ijt-rs-bottom').style.height = bottom + 'px';
+    setHeight(el.querySelector('.ijt-rs-top'), top + 'px');
+    setHeight(el.querySelector('.ijt-rs-bottom'), bottom + 'px');
     for (const r of RIGHT_ITEMS) {
       const it = el.querySelector(`.statusbar-item[id$=".${r.id}"]`);
       if (!it) continue;
@@ -638,7 +656,7 @@
   }
 
   function sendBridgeOp(op) {
-    const info = bridgeInfo(document.querySelector('.statusbar-item[id$=".ijt.branchMenu"]'));
+    const info = bridgeInfo(findItem('ijt.branchMenu'));
     if (!info) return;
     fetch(`http://127.0.0.1:${info.port}/action`, {
       method: 'POST', headers: { 'x-ijt-token': info.token, 'content-type': 'application/json' },
@@ -648,7 +666,7 @@
 
   // El widget de inspecciones va dentro del editor del grupo activo.
   function placeInspections() {
-    const item = document.querySelector('.statusbar-item[id$=".ijt.inspections"]');
+    const item = findItem('ijt.inspections');
     const container = document.querySelector('.part.editor .editor-group-container.active > .editor-container');
     if (!item || !container) return;
     let host = container.querySelector(':scope > .ijt-inspections-host');
@@ -664,7 +682,7 @@
   function onToolWindowClick(e) {
     const item = e.target.closest && e.target.closest('.statusbar-item');
     if (!item || !item.classList.contains('ijt-active')) return;
-    const info = bridgeInfo(document.querySelector('.statusbar-item[id$=".ijt.branchMenu"]'));
+    const info = bridgeInfo(findItem('ijt.branchMenu'));
     if (!info) return;
     e.preventDefault();
     e.stopPropagation();
@@ -1170,17 +1188,35 @@
     requestAnimationFrame(() => { scheduled = false; try { sync(); } catch (e) { console.error('[ijt]', e); } });
   }
 
+  // Los cambios dentro del editor (Monaco redibuja líneas al escribir) y de la terminal no mueven
+  // nada de lo nuestro: si todas las mutaciones vienen de ahí, no se re-sincroniza.
+  const NOISY = '.monaco-editor, .xterm';
+  function onBodyMutations(records) {
+    for (const r of records) {
+      const t = r.target;
+      if (!(t.closest && t.closest(NOISY))) { schedule(); return; }
+    }
+  }
+
   function start() {
-    new MutationObserver(schedule).observe(document.body, { childList: true, subtree: true });
+    new MutationObserver(onBodyMutations).observe(document.body, { childList: true, subtree: true });
     window.addEventListener('resize', schedule);
-    // Entrar / salir de pantalla completa cambia la clase "fullscreen" del workbench.
+    // Cambio de tema: VS Code reescribe su <style> de colores en el <head>.
+    new MutationObserver(() => { themeDirty = true; })
+      .observe(document.head, { childList: true, subtree: true, characterData: true });
+    // Entrar / salir de pantalla completa (y cambiar de tema) cambia la clase del workbench.
     const watchWorkbench = () => {
       const wb = document.querySelector('.monaco-workbench');
       if (!wb) return setTimeout(watchWorkbench, 500);
-      new MutationObserver(schedule).observe(wb, { attributes: true, attributeFilter: ['class'] });
+      new MutationObserver(() => { themeDirty = true; schedule(); }).observe(wb, { attributes: true, attributeFilter: ['class'] });
     };
     watchWorkbench();
-    setInterval(() => { try { refreshToolWindows(); refreshRightStripe(); placeInspections(); } catch { /* ignore */ } }, 400);
+    setInterval(() => {
+      if (document.hidden) return; // ventana minimizada u oculta: nada que refrescar
+      try { refreshToolWindows(); refreshRightStripe(); placeInspections(); } catch { /* ignore */ }
+    }, 400);
+    // Al volver a la ventana, refrescar enseguida en vez de esperar al siguiente tick.
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) { themeDirty = true; schedule(); } });
     schedule();
   }
 

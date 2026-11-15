@@ -101,34 +101,47 @@ async function refresh(repo) {
 
 // ------------------------------------------------------------------ datos
 
-async function getBranches() {
-  const repo = await repoOrThrow();
-  const root = repo.rootUri.fsPath;
-  const head = repo.state.HEAD ? (repo.state.HEAD.name || null) : null;
-  const repos = await targetRepos();
-  // Ramas de todos los repositorios (sin duplicados); los datos de seguimiento salen del primero que la tenga.
-  const seen = new Map(), remoteSet = new Set();
-  for (const r of repos) {
-    const refs = await r.getRefs({ sort: 'committerdate' });
-    for (const x of refs) {
-      if (x.type === 0 && x.name && !seen.has(x.name)) seen.set(x.name, { ref: x, repo: r });
-      if (x.type === 1 && x.name && !x.name.endsWith('/HEAD')) remoteSet.add(x.name);
+// Ramas locales (con upstream y ahead/behind) y remotas de un repositorio, con un solo proceso git.
+// `%(upstream:track)` da "[ahead 2, behind 1]", "[gone]" o vacío.
+async function listRefs(root) {
+  const out = await runGit(root, ['for-each-ref', '--sort=-committerdate',
+    '--format=%(refname)%00%(upstream:short)%00%(upstream:track)', 'refs/heads', 'refs/remotes']);
+  const local = [], remote = [];
+  for (const line of out.split('\n')) {
+    if (!line) continue;
+    const [ref, upstream, track] = line.split('\0');
+    if (ref.startsWith('refs/heads/')) {
+      const ahead = /ahead (\d+)/.exec(track), behind = /behind (\d+)/.exec(track);
+      local.push({
+        name: ref.slice('refs/heads/'.length),
+        upstream: upstream || null,
+        ahead: ahead ? +ahead[1] : 0,
+        behind: behind ? +behind[1] : 0
+      });
+    } else if (ref.startsWith('refs/remotes/') && !ref.endsWith('/HEAD')) {
+      remote.push(ref.slice('refs/remotes/'.length));
     }
   }
-  const locals = [...seen.values()].map(v => ({ ...v.ref, _repo: v.repo }));
-  const remotes = [...remoteSet];
-  const localNames = new Set(locals.map(r => r.name));
+  return { local, remote };
+}
 
-  const local = await Promise.all(locals.map(async r => {
-    let d = {};
-    try { d = await (r._repo || repo).getBranch(r.name); } catch { /* ignore */ }
-    return {
-      name: r.name,
-      upstream: d.upstream ? `${d.upstream.remote}/${d.upstream.name}` : null,
-      ahead: d.ahead || 0,
-      behind: d.behind || 0
-    };
-  }));
+async function getBranches() {
+  const repos = await targetRepos();
+  const repo = repos[0]; // el actual
+  const root = repo.rootUri.fsPath;
+  const head = repo.state.HEAD ? (repo.state.HEAD.name || null) : null;
+  // Un for-each-ref por repositorio, en paralelo. Si falla otro que no sea el actual, se ignora.
+  const perRepo = await Promise.all(repos.map((r, i) =>
+    listRefs(r.rootUri.fsPath).catch(e => { if (i === 0) throw e; return { local: [], remote: [] }; })));
+  // Ramas de todos los repositorios (sin duplicados); los datos de seguimiento salen del primero que la tenga.
+  const seen = new Map(), remoteSet = new Set();
+  for (const { local, remote } of perRepo) {
+    for (const b of local) if (!seen.has(b.name)) seen.set(b.name, b);
+    for (const n of remote) remoteSet.add(n);
+  }
+  const local = [...seen.values()];
+  const remotes = [...remoteSet];
+  const localNames = new Set(seen.keys());
 
   const recent = await menus.recentBranches(root, localNames, 5);
   if (head && localNames.has(head) && !recent.includes(head)) recent.unshift(head);
@@ -155,7 +168,11 @@ const OPS = {
   },
   commit: () => vscode.commands.executeCommand('workbench.view.scm'),
   push: () => vscode.commands.executeCommand('git.push'),
-  fetch: async () => { const repo = await repoOrThrow(); await withProgress('git fetch…', () => repo.fetch()); },
+  fetch: async () => {
+    const repos = await targetRepos();
+    if (repos.length < 2) return withProgress('git fetch…', () => repos[0].fetch());
+    await forEachRepo('git fetch…', repos, r => r.fetch());
+  },
   newWorktree: () => vscode.commands.executeCommand('git.createWorktree'),
   checkoutTag: () => vscode.commands.executeCommand('git.checkoutDetached'),
   rename: () => vscode.commands.executeCommand('git.renameBranch'),
@@ -163,7 +180,7 @@ const OPS = {
   closePanel: () => vscode.commands.executeCommand('workbench.action.closePanel'),
   closeAuxiliaryBar: () => vscode.commands.executeCommand('workbench.action.closeAuxiliaryBar'),
 
-  newBranch: async ({ ref }) => {
+  newBranch: async ({ ref, remote }) => {
     const repos = await targetRepos();
     if (repos.length < 2) return menus.newBranch(repos[0], ref || undefined);
     const name = await vscode.window.showInputBox({
@@ -172,9 +189,9 @@ const OPS = {
       validateInput: v => /^[^\s~^:?*[\\]+$/.test(v || '') ? undefined : 'Nombre de rama inválido'
     });
     if (!name) return;
-    const remote = !!ref && /^[^/]+\//.test(ref) && !(await hasRef(repos[0], ref, false));
+    // El menú indica si `ref` es remota; no se adivina por el "/" (las locales también lo llevan).
     await forEachRepo(`Nueva rama ${name}…`, repos, r => r.createBranch(name, true, ref || undefined),
-      ref ? r => hasRef(r, ref, remote) : undefined);
+      ref ? r => hasRef(r, ref, !!remote) : undefined);
   },
 
   checkout: async ({ ref, remote }) => {
@@ -209,7 +226,7 @@ const OPS = {
 
   diffWorking: async ({ ref }) => {
     const repo = await repoOrThrow();
-    const out = await runGit(repo.rootUri.fsPath, ['diff', ref]);
+    const out = await runGit(repo.rootUri.fsPath, ['diff', ref, '--']); // "--": ref, no ruta
     await showText(out || `Sin diferencias entre '${ref}' y el working tree.\n`, 'diff');
   },
 
@@ -265,7 +282,13 @@ const OPS = {
     const unmerged = [];
     await forEachRepo(`Eliminar ${ref}…`, repos, async r => {
       try { await r.deleteBranch(ref, false); }
-      catch (e) { unmerged.push(r); throw new Error('no está fusionada'); }
+      catch (e) {
+        // Solo "no fusionada" admite forzar; cualquier otro error (p. ej. abierta en un worktree) se informa tal cual.
+        const msg = String((e && (e.stderr || e.message)) || e);
+        if (!(e && e.gitErrorCode === 'BranchNotFullyMerged') && !/not fully merged/i.test(msg)) throw e;
+        unmerged.push(r);
+        throw new Error('no está fusionada');
+      }
     }, r => hasRef(r, ref, false));
     if (!unmerged.length) return;
     const force = await vscode.window.showWarningMessage(
