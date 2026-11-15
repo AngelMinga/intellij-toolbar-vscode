@@ -44,6 +44,12 @@
     "<path fill='%2300B5F8' d='m8.58 17.16 3.32-3.32 3.31 3.3-3.3 3.3z'/></svg>\")";
   const COLORS = ['#c27d2e', '#3d8f58', '#3c7fc4', '#9a5ac7', '#c4515f', '#2e9a9a', '#b5a032'];
 
+  // Islas: separación con el marco (entre dos islas queda el doble) y radio de las esquinas.
+  const ISLAND_GAP = 3;
+  const ISLAND_RADIUS = 10;
+  // Títulos de la barra lateral que IntelliJ llama distinto (solo el texto visible; VS Code en inglés).
+  const TITLE_RENAMES = { Explorer: 'Project' };
+
   const css = `
     .ijt-titlebar-host {
       display: flex; align-items: center; gap: 2px; height: 100%;
@@ -166,7 +172,8 @@
     .monaco-workbench .part.editor .tabs-container > .tab.active > .tab-fill::before,
     .monaco-workbench .part.editor .tabs-container > .tab.active > .tab-fill::after { display: none !important; }
     .monaco-workbench .part.editor .tabs-container > .tab.active > .tab-fill {
-      position: absolute !important; inset: 2px 1px !important; border-radius: 6px !important;
+      /* arriba 4px: libra el borde de ${ISLAND_GAP}px de la isla del editor */
+      position: absolute !important; inset: 4px 2px 2px !important; border-radius: 6px !important;
       background: #26282C !important; box-shadow: inset 0 0 0 1px #40434A !important;
     }
     .monaco-workbench .part.editor .editor-group-container.active .tabs-container > .tab.active > .tab-fill {
@@ -174,6 +181,39 @@
     }
     .monaco-workbench .part.editor .tabs-container > .tab { border-right: none !important; }
     .monaco-workbench .part.editor .tabs-container > .tab > .tab-divider { display: none !important; }
+
+    /* ---- Islas (IntelliJ 2025 "Islands"): barra lateral, editor, panel y barra auxiliar como tarjetas
+       redondeadas sobre el color del marco (el de la barra de actividad / título / estado).
+       No se tocan márgenes ni tamaños (VS Code calcula el diseño en píxeles y se descuadraría): se pinta
+       encima de cada parte una capa sin eventos de ratón cuya sombra, con el color del marco, cubre los
+       ${ISLAND_GAP}px del borde y las esquinas. Entre dos islas quedan ${ISLAND_GAP * 2}px. isolation: la capa
+       no tapa los sashes (bordes para redimensionar) ni nada fuera de su parte. */
+    .monaco-workbench .monaco-grid-view { background: var(--vscode-activityBar-background) !important; }
+    .monaco-workbench .split-view-view:is(:has(> .part.sidebar), :has(> .part.editor), :has(> .part.panel), :has(> .part.auxiliarybar)) {
+      isolation: isolate; overflow: hidden;
+    }
+    .monaco-workbench .split-view-view:is(:has(> .part.sidebar), :has(> .part.editor), :has(> .part.panel), :has(> .part.auxiliarybar))::after {
+      content: ''; position: absolute; inset: ${ISLAND_GAP}px; z-index: 35; pointer-events: none;
+      border-radius: ${ISLAND_RADIUS}px;
+      box-shadow: 0 0 0 ${ISLAND_GAP + ISLAND_RADIUS}px var(--vscode-activityBar-background);
+    }
+
+    /* ---- Fuente de la interfaz: Inter, como la New UI de IntelliJ (si no está instalada, la del sistema).
+       Solo la interfaz: el editor y la terminal fijan su propia fuente (JetBrains Mono). */
+    .monaco-workbench.monaco-workbench {
+      font-family: Inter, "SF Pro Text", -apple-system, BlinkMacSystemFont, sans-serif !important;
+    }
+
+    /* ---- Títulos de las ventanas de herramientas sin mayúsculas, como IntelliJ ("Project", no "EXPLORER"):
+       título de la barra lateral y auxiliar, pestañas del panel y cabeceras de secciones. */
+    .monaco-workbench .part > .title .title-label,
+    .monaco-workbench .part > .title .title-label h2,
+    .monaco-workbench .part > .title .action-item .action-label,
+    .monaco-workbench .pane > .pane-header .title,
+    .monaco-workbench .pane > .pane-header .description { text-transform: none !important; }
+    .monaco-workbench .part > .title .title-label h2 { font-size: 13px !important; font-weight: 600 !important; }
+    .monaco-workbench .part > .title .action-item .action-label:not(.codicon) { font-size: 13px !important; }
+    .monaco-workbench .pane > .pane-header .title { font-size: 12px !important; font-weight: 600 !important; }
 
     /* ---- Tooltip propio de las columnas (el de VS Code se posiciona mal fuera de su área) */
     #ijt-tooltip {
@@ -476,6 +516,7 @@
     const rs = ensureRightStripe();
     if (rs) placeItems(rs, RIGHT_ITEMS.map(r => r.id));
     placeInspections();
+    renameTitles();
     watchQuickInput();
     // Estado activo de las ventanas de herramientas y de la franja derecha: también por eventos (ver start).
     refreshToolWindows();
@@ -656,6 +697,17 @@
     callBridge('POST', '/action', { op })
       .then(() => setTimeout(() => { refreshToolWindows(); refreshRightStripe(); }, 150))
       .catch(() => {});
+  }
+
+  // "Explorer" → "Project" en el título de la barra lateral (y lo mismo en la auxiliar). VS Code reescribe
+  // el título al cambiar de vista; esa mutación vuelve a llamar a sync() y se renombra otra vez.
+  function renameTitles() {
+    for (const h of document.querySelectorAll('.part.sidebar > .title .title-label h2, .part.auxiliarybar > .title .title-label h2')) {
+      const t = h.textContent || '';
+      for (const from in TITLE_RENAMES) {
+        if (t === from || t.startsWith(from + ':')) { h.textContent = TITLE_RENAMES[from] + t.slice(from.length); break; }
+      }
+    }
   }
 
   // El widget de inspecciones va dentro del editor del grupo activo.
@@ -1184,10 +1236,11 @@
     requestAnimationFrame(() => { scheduled = false; try { sync(); } catch (e) { console.error('[ijt]', e); } });
   }
 
-  // Los cambios dentro del editor (Monaco redibuja líneas al escribir), la terminal, la lista del quick pick
-  // y nuestro propio menú de ramas no mueven nada de lo nuestro: si todas las mutaciones vienen de ahí,
-  // no se re-sincroniza.
-  const NOISY = '.monaco-editor, .xterm, .quick-input-list, .ijt-pop, .ijt-sub, #ijt-tooltip';
+  // Los cambios dentro del editor (Monaco redibuja líneas al escribir), la terminal, las filas de las listas
+  // y árboles (explorador, SCM… se re-renderizan al hacer scroll), las barras de scroll (cambian de clase al
+  // aparecer/desvanecerse), los hovers, la lista del quick pick y nuestro propio menú de ramas no mueven nada
+  // de lo nuestro: si todas las mutaciones vienen de ahí, no se re-sincroniza.
+  const NOISY = '.monaco-editor, .xterm, .monaco-list-rows, .scrollbar, .monaco-hover, .quick-input-list, .ijt-pop, .ijt-sub, #ijt-tooltip';
   function onBodyMutations(records) {
     for (const r of records) {
       const t = r.target;

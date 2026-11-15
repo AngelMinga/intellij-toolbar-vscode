@@ -163,6 +163,9 @@
     "workbench.editor.limit.enabled": true,
     "workbench.editor.limit.value": 10,
     "workbench.editor.limit.excludeDirty": true,
+    // Pestañas como IntelliJ: nombre coloreado según git (modificado/nuevo) y sin la letra M/U.
+    "workbench.editor.decorations.colors": true,
+    "workbench.editor.decorations.badges": false,
     // Estilo IntelliJ: imports plegados al abrir un archivo
     "editor.foldingImportsByDefault": true,
     // Estilo IntelliJ: ⌘B con varias definiciones muestra la lista para elegir

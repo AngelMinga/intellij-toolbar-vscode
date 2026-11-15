@@ -57,6 +57,8 @@ values = {
     "window.title": "${rootName}   ⎇ ${activeRepositoryBranchName}",
     "debug.showInStatusBar": "never",
     "git-graph.showStatusBarItem": False,
+    "workbench.editor.decorations.colors": True,
+    "workbench.editor.decorations.badges": False,
 }
 if with_inject == "1":
     values["vscode_custom_css.imports"] = ["file://" + inject]
