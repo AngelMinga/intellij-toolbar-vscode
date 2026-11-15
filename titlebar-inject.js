@@ -49,12 +49,13 @@
   const ISLAND_RADIUS = 10;
   // Títulos de la barra lateral que IntelliJ llama distinto (solo el texto visible; VS Code en inglés).
   // MultiGit (repositorios, cambios, commit y ramas en la barra lateral) hace de ventana Commit de IntelliJ.
-  const TITLE_RENAMES = { Explorer: 'Project', 'Source Control': 'Commit', MultiGit: 'Commit' };
+  // Outline: el contenedor "Structure" tiene una sola vista y VS Code le pone el nombre de esa vista.
+  const TITLE_RENAMES = { Explorer: 'Project', 'Source Control': 'Commit', MultiGit: 'Commit', Outline: 'Structure' };
   // Columna izquierda de arriba como IntelliJ: Project, Commit, Structure, Bookmarks primero (en ese orden).
   // Search, Extensions y Run and Debug se ocultan del ícono (siguen con sus atajos: ⇧⌘F, el ⚙ → Plugins, y
   // la depuración abre su vista sola). Se reconocen por el aria-label del ícono ("Search (⇧⌘F)", …).
   // Cada posición admite varios nombres: Commit es MultiGit si está instalado, si no Source Control.
-  const ACTIVITY_ORDER = [['Explorer'], ['MultiGit', 'Source Control'], ['Structure'], ['Bookmarks']];
+  const ACTIVITY_ORDER = [['Explorer'], ['MultiGit', 'Source Control'], ['Structure', 'Outline'], ['Bookmarks']];
   const ACTIVITY_HIDDEN = ['Search', 'Extensions', 'Run and Debug'];
   const activityItem = label => `.monaco-workbench .part.activitybar .composite-bar .action-item:has(> .action-label[aria-label^="${label}"])`;
 
