@@ -2,24 +2,27 @@
 // Se crean como items de la barra de estado; titlebar-inject.js los mueve a la barra de título.
 const vscode = require('vscode');
 
-const R = vscode.StatusBarAlignment.Right;
+const { Left: L, Right: R } = vscode.StatusBarAlignment;
 
-function item(id, name, priority, text, tooltip, command) {
-  const it = vscode.window.createStatusBarItem(id, R, priority);
+/** Crea un item de la barra de estado y lo añade a `ctx.subscriptions`. */
+function statusItem(ctx, align, id, name, priority, text, tooltip, command) {
+  const it = vscode.window.createStatusBarItem(id, align, priority);
   it.name = `IntelliJ Toolbar: ${name}`;
   it.text = text;
   it.tooltip = tooltip;
   it.command = command;
+  ctx.subscriptions.push(it);
   return it;
 }
 
 function isDartSession(s) {
-  return s && (s.type === 'dart' || s.type === 'flutter');
+  return !!s && (s.type === 'dart' || s.type === 'flutter');
 }
 
 // Device, configuración, Run, Debug y Stop los aporta la extensión "run-configurations"
 // (angelminga.run-configurations); aquí solo quedan los extras que esa extensión no tiene.
 function register(ctx) {
+  const item = (...a) => statusItem(ctx, R, ...a);
   const reload = item('ijt.reloadBtn', 'Hot Reload', 10009, '$(zap)', 'Hot Reload', 'ijt.hotReload');
   const restart = item('ijt.restartBtn', 'Hot Restart', 10008, '$(debug-restart)', 'Hot Restart', 'ijt.hotRestart');
   const more = item('ijt.moreBtn', 'Más acciones', 10004, '$(kebab-vertical)', 'Más acciones', 'ijt.more');
@@ -28,20 +31,10 @@ function register(ctx) {
     'Buscar: archivos, comandos, texto, símbolos (⌘P)', 'workbench.action.quickOpenWithModes');
   // Engranaje estilo IntelliJ ("IDE and Project Settings").
   const settings = item('ijt.settingsBtn', 'Ajustes', 10002, '$(settings-gear)', 'Ajustes, atajos, extensiones y tema', 'ijt.settings');
-  ctx.subscriptions.push(reload, restart, more, search, settings);
 
   // Ventanas de herramientas de abajo (columna izquierda de IntelliJ): Run, Terminal, Problems, Git.
   // titlebar-inject.js las mueve al pie de la barra de actividad y marca la que está abierta.
-  const L = vscode.StatusBarAlignment.Left;
-  const tw = (id, name, prio, icon, tooltip, command) => {
-    const it = vscode.window.createStatusBarItem(id, L, prio);
-    it.name = `IntelliJ Toolbar: ${name}`;
-    it.text = icon;
-    it.tooltip = tooltip;
-    it.command = command;
-    ctx.subscriptions.push(it);
-    return it;
-  };
+  const tw = (...a) => statusItem(ctx, L, ...a);
   const toolWindows = [
     tw('ijt.tw.run', 'Run', 7, '$(play-circle)', 'Run (⌘4)', 'workbench.debug.action.toggleRepl'),
     tw('ijt.tw.terminal', 'Terminal', 6, '$(terminal)', 'Terminal (⌥F12)', 'workbench.action.terminal.toggleTerminal'),
@@ -136,7 +129,6 @@ function register(ctx) {
   );
 
   refreshButtons();
-  return { refreshConfig: () => {} };
 }
 
 async function exec(cmd, ...args) {
@@ -203,4 +195,4 @@ async function settingsMenu() {
   if (pick && pick.cmd) await exec(pick.cmd);
 }
 
-module.exports = { register, moreMenu, settingsMenu, exec };
+module.exports = { register, moreMenu, settingsMenu, exec, isDartSession };

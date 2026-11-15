@@ -355,12 +355,7 @@
   function dbg(ev, data) {
     if (dbgBudget <= 0) return;
     dbgBudget--;
-    const info = bridgeInfo(findItem('ijt.branchMenu'));
-    if (!info) return;
-    fetch(`http://127.0.0.1:${info.port}/log`, {
-      method: 'POST', headers: { 'x-ijt-token': info.token, 'content-type': 'application/json' },
-      body: JSON.stringify(Object.assign({ ev }, data))
-    }).catch(() => {});
+    callBridge('POST', '/log', Object.assign({ ev }, data)).catch(() => {});
   }
   function rectOf(el) {
     const r = el.getBoundingClientRect();
@@ -655,13 +650,11 @@
     e.stopPropagation();
   }
 
+  // Pide una acción al puente y, al terminar, refresca qué ventana de herramientas está activa.
   function sendBridgeOp(op) {
-    const info = bridgeInfo(findItem('ijt.branchMenu'));
-    if (!info) return;
-    fetch(`http://127.0.0.1:${info.port}/action`, {
-      method: 'POST', headers: { 'x-ijt-token': info.token, 'content-type': 'application/json' },
-      body: JSON.stringify({ op })
-    }).then(() => setTimeout(() => { refreshToolWindows(); refreshRightStripe(); }, 150)).catch(() => {});
+    callBridge('POST', '/action', { op })
+      .then(() => setTimeout(() => { refreshToolWindows(); refreshRightStripe(); }, 150))
+      .catch(() => {});
   }
 
   // El widget de inspecciones va dentro del editor del grupo activo.
@@ -682,14 +675,10 @@
   function onToolWindowClick(e) {
     const item = e.target.closest && e.target.closest('.statusbar-item');
     if (!item || !item.classList.contains('ijt-active')) return;
-    const info = bridgeInfo(findItem('ijt.branchMenu'));
-    if (!info) return;
+    if (!currentBridge()) return; // sin puente: que el comando normal haga lo suyo
     e.preventDefault();
     e.stopPropagation();
-    fetch(`http://127.0.0.1:${info.port}/action`, {
-      method: 'POST', headers: { 'x-ijt-token': info.token, 'content-type': 'application/json' },
-      body: JSON.stringify({ op: 'closePanel' })
-    }).then(() => setTimeout(refreshToolWindows, 150)).catch(() => {});
+    sendBridgeOp('closePanel');
   }
 
   // Deja libre el espacio de los semáforos de macOS (cerrar / minimizar / maximizar).
@@ -781,9 +770,15 @@
     return m ? { port: m[1], token: m[2] } : null;
   }
 
+  function currentBridge() { return bridgeInfo(findItem('ijt.branchMenu')); }
+
+  // Única llamada HTTP al puente (bridge.js). El puerto y el token se leen del botón de rama en cada
+  // llamada (cambian si se reinicia el host de extensiones); POP.info solo como respaldo.
   async function callBridge(method, path, body) {
-    const r = await fetch(`http://127.0.0.1:${POP.info.port}${path}`, {
-      method, headers: { 'x-ijt-token': POP.info.token, 'content-type': 'application/json' },
+    const info = currentBridge() || POP.info;
+    if (!info) throw new Error('Sin conexión con la extensión');
+    const r = await fetch(`http://127.0.0.1:${info.port}${path}`, {
+      method, headers: { 'x-ijt-token': info.token, 'content-type': 'application/json' },
       body: body ? JSON.stringify(body) : undefined
     });
     const json = await r.json().catch(() => ({}));

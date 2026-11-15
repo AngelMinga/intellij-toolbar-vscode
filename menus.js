@@ -79,18 +79,19 @@ async function pickProject() {
 
 // ---------------------------------------------------------------- Git
 
+const apiOf = exp => (exp && exp.enabled ? exp.getAPI(1) : undefined);
+
+/** API de la extensión Git si ya está activa (síncrono, para refrescos de la barra). */
 function gitApi() {
   const ext = vscode.extensions.getExtension('vscode.git');
-  if (!ext) return undefined;
-  const exp = ext.isActive ? ext.exports : undefined;
-  return exp && exp.enabled ? exp.getAPI(1) : undefined;
+  return ext && ext.isActive ? apiOf(ext.exports) : undefined;
 }
 
+/** API de la extensión Git, activándola si hace falta. */
 async function gitApiAsync() {
   const ext = vscode.extensions.getExtension('vscode.git');
   if (!ext) return undefined;
-  const exp = ext.isActive ? ext.exports : await ext.activate();
-  return exp && exp.enabled ? exp.getAPI(1) : undefined;
+  return apiOf(ext.isActive ? ext.exports : await ext.activate());
 }
 
 function currentRepo(api) {
@@ -103,10 +104,19 @@ function currentRepo(api) {
   return api.repositories[0];
 }
 
-function git(cwd, args) {
-  return new Promise(resolve => {
-    execFile('git', args, { cwd, maxBuffer: 4 * 1024 * 1024 }, (err, stdout) => resolve(err ? '' : stdout));
+/** Ejecuta git y devuelve stdout; rechaza con el stderr de git como mensaje. */
+function runGit(cwd, args) {
+  return new Promise((resolve, reject) => {
+    execFile('git', args, { cwd, maxBuffer: 16 * 1024 * 1024 }, (err, stdout, stderr) => {
+      if (err) reject(new Error((stderr || err.message || '').trim()));
+      else resolve(stdout);
+    });
   });
+}
+
+/** Como runGit, pero ante un error devuelve '' (para datos opcionales como el reflog). */
+function git(cwd, args) {
+  return runGit(cwd, args).catch(() => '');
 }
 
 // Ramas visitadas recientemente según el reflog (como "Recent" de IntelliJ).
@@ -293,4 +303,4 @@ function registerStatus(ctx) {
   return { project, branch };
 }
 
-module.exports = { pickProject, pickBranch, registerStatus, gitApiAsync, currentRepo, recentBranches, git, newBranch, MAIN_NAMES };
+module.exports = { pickProject, pickBranch, registerStatus, gitApiAsync, currentRepo, recentBranches, git, runGit, newBranch, MAIN_NAMES };

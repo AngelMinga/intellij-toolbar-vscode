@@ -37,7 +37,6 @@ async function pickConfig(ctx) {
     return undefined;
   }
   await ctx.workspaceState.update(KEY, pick.value);
-  updateStatus();
   return pick.value;
 }
 
@@ -60,23 +59,18 @@ async function launch(ctx, noDebug) {
   }
 }
 
-let toolbarApi;
-function updateStatus() {
-  if (toolbarApi) toolbarApi.refreshConfig();
-}
-
 function activate(ctx) {
   const toolbar = require('./toolbar');
-  toolbarApi = toolbar.register(ctx);
+  toolbar.register(ctx);
+
+  // En una sesión Dart/Flutter usa el comando de Flutter; en cualquier otra, el restart del debugger.
+  const flutterOrRestart = cmd => () =>
+    toolbar.exec(toolbar.isDartSession(vscode.debug.activeDebugSession) ? cmd : 'workbench.action.debug.restart');
 
   const reg = (id, fn) => ctx.subscriptions.push(vscode.commands.registerCommand(id, fn));
   reg('ijt.more', () => toolbar.moreMenu());
   reg('ijt.settings', () => toolbar.settingsMenu());
-  reg('ijt.hotReload', async () => {
-    const s = vscode.debug.activeDebugSession;
-    if (s && (s.type === 'dart' || s.type === 'flutter')) return toolbar.exec('flutter.hotReload');
-    return toolbar.exec('workbench.action.debug.restart');
-  });
+  reg('ijt.hotReload', flutterOrRestart('flutter.hotReload'));
   reg('ijt.branch', () => menus.pickBranch());
   reg('ijt.projects', () => menus.pickProject());
   const items = menus.registerStatus(ctx);
@@ -89,11 +83,7 @@ function activate(ctx) {
   reg('ijt.run', () => launch(ctx, true));
   reg('ijt.debug', () => launch(ctx, false));
   reg('ijt.stop', () => vscode.commands.executeCommand('workbench.action.debug.stop'));
-  reg('ijt.hotRestart', async () => {
-    const s = vscode.debug.activeDebugSession;
-    if (s && (s.type === 'dart' || s.type === 'flutter')) return toolbar.exec('flutter.hotRestart');
-    return toolbar.exec('workbench.action.debug.restart');
-  });
+  reg('ijt.hotRestart', flutterOrRestart('flutter.hotRestart'));
 }
 
 function deactivate() {}

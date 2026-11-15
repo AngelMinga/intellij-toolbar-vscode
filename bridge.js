@@ -16,17 +16,8 @@ function appendLog(entry) {
     fs.appendFileSync(LOG_FILE, JSON.stringify(Object.assign({ at: new Date().toISOString() }, entry)) + '\n');
   } catch { /* ignore */ }
 }
-const { execFile } = require('child_process');
 const menus = require('./menus');
-
-function runGit(cwd, args) {
-  return new Promise((resolve, reject) => {
-    execFile('git', args, { cwd, maxBuffer: 16 * 1024 * 1024 }, (err, stdout, stderr) => {
-      if (err) reject(new Error((stderr || err.message || '').trim()));
-      else resolve(stdout);
-    });
-  });
-}
+const { runGit } = menus;
 
 async function repoOrThrow() {
   const repo = menus.currentRepo(await menus.gitApiAsync());
@@ -54,21 +45,47 @@ async function hasRef(repo, ref, remote) {
   return refs.some(r => r.name === ref);
 }
 
+// Repositorios que se procesan a la vez: cada uno es independiente, pero sin límite podrían salir
+// varias peticiones de credenciales juntas y saturar la red o el disco.
+const REPO_CONCURRENCY = 4;
+
 /**
  * Ejecuta `fn` en cada repositorio (opcionalmente solo en los que tienen `needRef`) y muestra un resumen:
- * en cuántos se hizo, cuáles no tienen la rama y cuáles fallaron.
+ * en cuántos se hizo, cuáles no tienen la rama y cuáles fallaron. Hasta REPO_CONCURRENCY en paralelo;
+ * los resúmenes conservan el orden de `repos` (el actual primero).
  */
 async function forEachRepo(title, repos, fn, needRef) {
-  const done = [], skipped = [], failed = [];
+  const results = new Array(repos.length); // 'done' | 'skipped' | mensaje de error
   await withProgress(title, async progress => {
-    for (const repo of repos) {
-      const name = repoName(repo);
-      progress.report({ message: name });
-      if (needRef && !(await needRef(repo))) { skipped.push(name); continue; }
-      try { await fn(repo); done.push(name); }
-      catch (e) { failed.push(`${name}: ${(e && (e.stderr || e.message)) || e}`.split('\n')[0]); }
-      await refresh(repo);
-    }
+    const running = new Set();
+    const report = () => progress.report({ message: [...running].join(', ') });
+    let next = 0;
+    const worker = async () => {
+      while (next < repos.length) {
+        const i = next++;
+        const repo = repos[i];
+        const name = repoName(repo);
+        running.add(name); report();
+        try {
+          if (needRef && !(await needRef(repo))) { results[i] = 'skipped'; continue; }
+          try { await fn(repo); results[i] = 'done'; }
+          catch (e) { results[i] = { error: `${name}: ${(e && (e.stderr || e.message)) || e}`.split('\n')[0] }; }
+          await refresh(repo);
+        } catch (e) {
+          results[i] = { error: `${name}: ${(e && e.message) || e}`.split('\n')[0] }; // falló needRef
+        } finally {
+          running.delete(name); report();
+        }
+      }
+    };
+    await Promise.all(Array.from({ length: Math.min(REPO_CONCURRENCY, repos.length) }, worker));
+  });
+  const done = [], skipped = [], failed = [];
+  results.forEach((r, i) => {
+    const name = repoName(repos[i]);
+    if (r === 'done') done.push(name);
+    else if (r === 'skipped') skipped.push(name);
+    else failed.push(r.error);
   });
   if (repos.length < 2) {
     if (failed.length) throw new Error(failed[0].replace(/^[^:]+: /, ''));
