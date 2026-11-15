@@ -58,6 +58,14 @@ function register(ctx) {
     }
   }
 
+  // Structure (⌘7 en IntelliJ): la vista Outline pasa (una vez) a su propio ícono en la columna izquierda,
+  // contenedor "ijt-structure" del package.json. Si el usuario la vuelve a mover, no se insiste.
+  if (!ctx.globalState.get('ijt.structureMoved.v1')) {
+    Promise.resolve(vscode.commands.executeCommand('vscode.moveViews', { viewIds: ['outline'], destinationId: 'workbench.view.extension.ijt-structure' }))
+      .then(() => ctx.globalState.update('ijt.structureMoved.v1', true))
+      .catch(e => console.error('[intellij-toolbar] moveViews outline', e));
+  }
+
   // Git: la pestaña "MultiGit" del panel (contenedor multigit-panel); sin MultiGit, Source Control.
   const git = tw('ijt.tw.git', 'Git', 2, '$(source-control)', 'Git (⌘9)', 'workbench.view.extension.multigit-panel');
   if (!vscode.extensions.getExtension('angelminga.multigit')) {

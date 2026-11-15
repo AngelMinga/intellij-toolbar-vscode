@@ -48,7 +48,15 @@
   const ISLAND_GAP = 3;
   const ISLAND_RADIUS = 10;
   // Títulos de la barra lateral que IntelliJ llama distinto (solo el texto visible; VS Code en inglés).
-  const TITLE_RENAMES = { Explorer: 'Project' };
+  // MultiGit (repositorios, cambios, commit y ramas en la barra lateral) hace de ventana Commit de IntelliJ.
+  const TITLE_RENAMES = { Explorer: 'Project', 'Source Control': 'Commit', MultiGit: 'Commit' };
+  // Columna izquierda de arriba como IntelliJ: Project, Commit, Structure, Bookmarks primero (en ese orden).
+  // Search, Extensions y Run and Debug se ocultan del ícono (siguen con sus atajos: ⇧⌘F, el ⚙ → Plugins, y
+  // la depuración abre su vista sola). Se reconocen por el aria-label del ícono ("Search (⇧⌘F)", …).
+  // Cada posición admite varios nombres: Commit es MultiGit si está instalado, si no Source Control.
+  const ACTIVITY_ORDER = [['Explorer'], ['MultiGit', 'Source Control'], ['Structure'], ['Bookmarks']];
+  const ACTIVITY_HIDDEN = ['Search', 'Extensions', 'Run and Debug'];
+  const activityItem = label => `.monaco-workbench .part.activitybar .composite-bar .action-item:has(> .action-label[aria-label^="${label}"])`;
 
   const css = `
     .ijt-titlebar-host {
@@ -196,6 +204,26 @@
       content: ''; position: absolute; inset: ${ISLAND_GAP}px; z-index: 35; pointer-events: none;
       border-radius: ${ISLAND_RADIUS}px;
       box-shadow: 0 0 0 ${ISLAND_GAP + ISLAND_RADIUS}px var(--vscode-activityBar-background);
+    }
+
+    /* ---- Columna izquierda de arriba (barra de actividad): orden y elementos ocultos, ver ACTIVITY_ORDER.
+       VS Code pone la lista vertical como inline-block, donde "order" no hace nada: se pasa a flex en columna. */
+    .monaco-workbench .part.activitybar .composite-bar .monaco-action-bar.vertical .actions-container {
+      display: flex !important; flex-direction: column;
+    }
+    ${ACTIVITY_ORDER.map((names, i) => `${names.map(activityItem).join(', ')} { order: ${i - ACTIVITY_ORDER.length}; }`).join('\n    ')}
+    ${ACTIVITY_HIDDEN.map(activityItem).join(',\n    ')} { display: none !important; }
+
+    /* ---- Barra de estado como IntelliJ: "13:1" y "4 spaces" (statusbar.js) en lugar de "Ln 13, Col 1" y
+       "Tab Size: 4"; sin el lenguaje ni su indicador {}. Solo si los de la extensión están (:has). */
+    .monaco-workbench .part.statusbar:has([id$=".ijt.position"]) .statusbar-item[id="status.editor.selection"],
+    .monaco-workbench .part.statusbar:has([id$=".ijt.indent"]) .statusbar-item[id="status.editor.indentation"],
+    .monaco-workbench .part.statusbar .statusbar-item:is([id="status.editor.mode"], [id="status.languageStatus"]) {
+      display: none !important;
+    }
+    .monaco-workbench .part.statusbar .statusbar-item[id$=".ijt.navPath"] { max-width: 50vw; }
+    .monaco-workbench .part.statusbar .statusbar-item[id$=".ijt.navPath"] > a {
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap; opacity: .9;
     }
 
     /* ---- Fuente de la interfaz: Inter, como la New UI de IntelliJ (si no está instalada, la del sistema).

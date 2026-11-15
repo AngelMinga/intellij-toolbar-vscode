@@ -62,6 +62,7 @@ async function launch(ctx, noDebug) {
 function activate(ctx) {
   const toolbar = require('./toolbar');
   toolbar.register(ctx);
+  require('./statusbar').register(ctx);
 
   // En una sesión Dart/Flutter usa el comando de Flutter; en cualquier otra, el restart del debugger.
   const flutterOrRestart = cmd => () =>
