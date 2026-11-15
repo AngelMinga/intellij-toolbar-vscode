@@ -1,6 +1,7 @@
 // Botones extra del lado derecho estilo IntelliJ: Hot Reload, Hot Restart, "más" (⋮), buscar (lupa) y ajustes (⚙).
 // Se crean como items de la barra de estado; titlebar-inject.js los mueve a la barra de título.
 const vscode = require('vscode');
+const { updateItem } = require('./menus');
 
 const { Left: L, Right: R } = vscode.StatusBarAlignment;
 
@@ -83,7 +84,7 @@ function register(ctx) {
   const inspections = tw('ijt.inspections', 'Inspections', 1, '$(check)', 'Problems (⌘6)', 'workbench.actions.view.problems');
   const refreshInspections = () => {
     const ed = vscode.window.activeTextEditor;
-    if (!ed) { inspections.hide(); return; }
+    if (!ed) { updateItem(inspections, { visible: false }); return; }
     let errors = 0, warnings = 0, infos = 0;
     for (const d of vscode.languages.getDiagnostics(ed.document.uri)) {
       if (d.severity === vscode.DiagnosticSeverity.Error) errors++;
@@ -94,18 +95,29 @@ function register(ctx) {
     if (errors) parts.push(`$(error) ${errors}`);
     if (warnings) parts.push(`$(warning) ${warnings}`);
     if (infos) parts.push(`$(info) ${infos}`);
-    inspections.text = parts.length ? parts.join('  ') : '$(check)';
-    inspections.tooltip = parts.length
-      ? `${errors} errores, ${warnings} warnings, ${infos} sugerencias en este archivo (clic: Problems)`
-      : 'Sin problemas en este archivo';
-    inspections.show();
+    updateItem(inspections, {
+      text: parts.length ? parts.join('  ') : '$(check)',
+      tooltip: parts.length
+        ? `${errors} errores, ${warnings} warnings, ${infos} sugerencias en este archivo (clic: Problems)`
+        : 'Sin problemas en este archivo'
+    });
+  };
+  // Mientras se escribe, el servidor de lenguaje publica diagnósticos varias veces por segundo:
+  // se agrupan en un solo recuento cada 150 ms.
+  let inspectionsTimer;
+  const scheduleInspections = () => {
+    clearTimeout(inspectionsTimer);
+    inspectionsTimer = setTimeout(refreshInspections, 150);
   };
   ctx.subscriptions.push(
     vscode.languages.onDidChangeDiagnostics(e => {
       const ed = vscode.window.activeTextEditor;
-      if (ed && e.uris.some(u => u.toString() === ed.document.uri.toString())) refreshInspections();
+      if (!ed) return;
+      const uri = ed.document.uri.toString();
+      if (e.uris.some(u => u.toString() === uri)) scheduleInspections();
     }),
-    vscode.window.onDidChangeActiveTextEditor(refreshInspections)
+    vscode.window.onDidChangeActiveTextEditor(scheduleInspections),
+    { dispose: () => clearTimeout(inspectionsTimer) }
   );
   refreshInspections();
 

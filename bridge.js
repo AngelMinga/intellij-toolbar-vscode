@@ -118,30 +118,6 @@ async function refresh(repo) {
 
 // ------------------------------------------------------------------ datos
 
-// Ramas locales (con upstream y ahead/behind) y remotas de un repositorio, con un solo proceso git.
-// `%(upstream:track)` da "[ahead 2, behind 1]", "[gone]" o vacío.
-async function listRefs(root) {
-  const out = await runGit(root, ['for-each-ref', '--sort=-committerdate',
-    '--format=%(refname)%00%(upstream:short)%00%(upstream:track)', 'refs/heads', 'refs/remotes']);
-  const local = [], remote = [];
-  for (const line of out.split('\n')) {
-    if (!line) continue;
-    const [ref, upstream, track] = line.split('\0');
-    if (ref.startsWith('refs/heads/')) {
-      const ahead = /ahead (\d+)/.exec(track), behind = /behind (\d+)/.exec(track);
-      local.push({
-        name: ref.slice('refs/heads/'.length),
-        upstream: upstream || null,
-        ahead: ahead ? +ahead[1] : 0,
-        behind: behind ? +behind[1] : 0
-      });
-    } else if (ref.startsWith('refs/remotes/') && !ref.endsWith('/HEAD')) {
-      remote.push(ref.slice('refs/remotes/'.length));
-    }
-  }
-  return { local, remote };
-}
-
 async function getBranches() {
   const repos = await targetRepos();
   const repo = repos[0]; // el actual
@@ -149,7 +125,7 @@ async function getBranches() {
   const head = repo.state.HEAD ? (repo.state.HEAD.name || null) : null;
   // Un for-each-ref por repositorio, en paralelo. Si falla otro que no sea el actual, se ignora.
   const perRepo = await Promise.all(repos.map((r, i) =>
-    listRefs(r.rootUri.fsPath).catch(e => { if (i === 0) throw e; return { local: [], remote: [] }; })));
+    menus.listRefs(r.rootUri.fsPath).catch(e => { if (i === 0) throw e; return { local: [], remote: [] }; })));
   // Ramas de todos los repositorios (sin duplicados); los datos de seguimiento salen del primero que la tenga.
   const seen = new Map(), remoteSet = new Set();
   for (const { local, remote } of perRepo) {

@@ -119,6 +119,30 @@ function git(cwd, args) {
   return runGit(cwd, args).catch(() => '');
 }
 
+// Ramas locales (con upstream y ahead/behind) y remotas de un repositorio, con un solo proceso git.
+// `%(upstream:track)` da "[ahead 2, behind 1]", "[gone]" o vacío.
+async function listRefs(root) {
+  const out = await runGit(root, ['for-each-ref', '--sort=-committerdate',
+    '--format=%(refname)%00%(upstream:short)%00%(upstream:track)', 'refs/heads', 'refs/remotes']);
+  const local = [], remote = [];
+  for (const line of out.split('\n')) {
+    if (!line) continue;
+    const [ref, upstream, track] = line.split('\0');
+    if (ref.startsWith('refs/heads/')) {
+      const ahead = /ahead (\d+)/.exec(track), behind = /behind (\d+)/.exec(track);
+      local.push({
+        name: ref.slice('refs/heads/'.length),
+        upstream: upstream || null,
+        ahead: ahead ? +ahead[1] : 0,
+        behind: behind ? +behind[1] : 0
+      });
+    } else if (ref.startsWith('refs/remotes/') && !ref.endsWith('/HEAD')) {
+      remote.push(ref.slice('refs/remotes/'.length));
+    }
+  }
+  return { local, remote };
+}
+
 // Ramas visitadas recientemente según el reflog (como "Recent" de IntelliJ).
 async function recentBranches(root, localNames, limit = 5) {
   const out = await git(root, ['reflog', 'show', '--format=%gs', '-n', '500']);
@@ -148,19 +172,18 @@ async function pickBranch() {
   const root = repo.rootUri.fsPath;
   const head = repo.state.HEAD && repo.state.HEAD.name;
 
-  const refs = await repo.getRefs({ sort: 'committerdate' });
-  const locals = refs.filter(r => r.type === 0 && r.name);
-  const remotes = refs.filter(r => r.type === 1 && r.name && !r.name.endsWith('/HEAD'));
+  // Un solo for-each-ref (en vez de un getBranch por rama, que lanza varios procesos git cada uno).
+  let refs;
+  try { refs = await listRefs(root); }
+  catch (e) { return vscode.window.showErrorMessage(e.message || String(e)); }
+  const locals = refs.local;
+  const remotes = refs.remote.map(name => ({ name }));
   const localNames = new Set(locals.map(r => r.name));
-
-  const details = new Map();
-  await Promise.all(locals.map(async r => {
-    try { details.set(r.name, await repo.getBranch(r.name)); } catch { /* ignore */ }
-  }));
+  const details = new Map(locals.map(r => [r.name, r]));
 
   const localItem = (name) => {
     const d = details.get(name) || {};
-    const up = d.upstream ? `${d.upstream.remote}/${d.upstream.name}` : '';
+    const up = d.upstream || '';
     const sync = [d.behind ? `↓${d.behind}` : '', d.ahead ? `↑${d.ahead}` : ''].filter(Boolean).join(' ');
     return {
       label: `${branchIcon(name, name === head)} ${name}`,
@@ -258,6 +281,18 @@ async function checkout(repo, ref, isRemote, localName, localNames) {
 
 // ---------------------------------------------------------------- Barra de estado
 
+// Cada asignación a un StatusBarItem (text, tooltip, show/hide) es un mensaje al proceso de la ventana,
+// que vuelve a pintar el botón (y despierta el observer de titlebar-inject.js) aunque el valor sea igual.
+// updateItem solo toca lo que cambió.
+const itemState = new WeakMap();
+function updateItem(item, { text, tooltip, visible = true }) {
+  let s = itemState.get(item);
+  if (!s) { s = {}; itemState.set(item, s); }
+  if (text !== undefined && s.text !== text) { item.text = s.text = text; }
+  if (tooltip !== undefined && s.tooltip !== tooltip) { item.tooltip = s.tooltip = tooltip; }
+  if (s.visible !== visible) { s.visible = visible; visible ? item.show() : item.hide(); }
+}
+
 function registerStatus(ctx) {
   const project = vscode.window.createStatusBarItem('ijt.project', vscode.StatusBarAlignment.Left, 10002);
   project.name = 'IntelliJ Toolbar: Proyecto';
@@ -271,23 +306,21 @@ function registerStatus(ctx) {
 
   const refreshProject = () => {
     const name = vscode.workspace.name || (vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders[0] && vscode.workspace.workspaceFolders[0].name);
-    if (!name) { project.hide(); return; }
-    project.text = `$(folder) ${name.replace(/ \(Workspace\)$/, '')} $(chevron-down)`;
-    project.show();
+    if (!name) { updateItem(project, { visible: false }); return; }
+    updateItem(project, { text: `$(folder) ${name.replace(/ \(Workspace\)$/, '')} $(chevron-down)` });
   };
 
   const watched = new Set();
   const refreshBranch = () => {
     const repo = currentRepo(gitApi());
-    if (!repo) { branch.hide(); return; }
+    if (!repo) { updateItem(branch, { visible: false }); return; }
     if (!watched.has(repo)) {
       watched.add(repo);
       ctx.subscriptions.push(repo.state.onDidChange(refreshBranch));
     }
     const h = repo.state.HEAD;
     const name = h ? (h.name || (h.commit ? h.commit.slice(0, 8) : '…')) : '…';
-    branch.text = `$(git-branch) ${name} $(chevron-down)`;
-    branch.show();
+    updateItem(branch, { text: `$(git-branch) ${name} $(chevron-down)` });
   };
 
   refreshProject();
@@ -303,4 +336,4 @@ function registerStatus(ctx) {
   return { project, branch };
 }
 
-module.exports = { pickProject, pickBranch, registerStatus, gitApiAsync, currentRepo, recentBranches, git, runGit, newBranch, MAIN_NAMES };
+module.exports = { pickProject, pickBranch, registerStatus, gitApiAsync, currentRepo, recentBranches, git, runGit, listRefs, updateItem, newBranch, MAIN_NAMES };

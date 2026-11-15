@@ -477,6 +477,9 @@
     if (rs) placeItems(rs, RIGHT_ITEMS.map(r => r.id));
     placeInspections();
     watchQuickInput();
+    // Estado activo de las ventanas de herramientas y de la franja derecha: también por eventos (ver start).
+    refreshToolWindows();
+    refreshRightStripe();
   }
 
   // ---- Tooltips de las columnas de ventanas. Se corta el "mouseover" para que VS Code no muestre el suyo
@@ -609,7 +612,6 @@
   // Los colores solo se vuelven a copiar si el tema pudo cambiar (clase del workbench o <style> del
   // <head>) o, por si acaso, cada ~5 s: getComputedStyle + leer las variables cada 400 ms es caro.
   let themeDirty = true;
-  let themeTick = 0;
   function setHeight(node, px) {
     if (node && node.style.height !== px) node.style.height = px;
   }
@@ -617,7 +619,6 @@
     const el = document.getElementById('ijt-rightstripe');
     if (!el) return;
     const wb = document.querySelector('.monaco-workbench');
-    if (++themeTick >= 12) { themeTick = 0; themeDirty = true; }
     if (wb && themeDirty) {
       themeDirty = false;
       const cs = getComputedStyle(wb);
@@ -1183,9 +1184,10 @@
     requestAnimationFrame(() => { scheduled = false; try { sync(); } catch (e) { console.error('[ijt]', e); } });
   }
 
-  // Los cambios dentro del editor (Monaco redibuja líneas al escribir) y de la terminal no mueven
-  // nada de lo nuestro: si todas las mutaciones vienen de ahí, no se re-sincroniza.
-  const NOISY = '.monaco-editor, .xterm';
+  // Los cambios dentro del editor (Monaco redibuja líneas al escribir), la terminal, la lista del quick pick
+  // y nuestro propio menú de ramas no mueven nada de lo nuestro: si todas las mutaciones vienen de ahí,
+  // no se re-sincroniza.
+  const NOISY = '.monaco-editor, .xterm, .quick-input-list, .ijt-pop, .ijt-sub, #ijt-tooltip';
   function onBodyMutations(records) {
     for (const r of records) {
       const t = r.target;
@@ -1194,7 +1196,11 @@
   }
 
   function start() {
-    new MutationObserver(onBodyMutations).observe(document.body, { childList: true, subtree: true });
+    // childList: aparecen/desaparecen items y partes. class: se abre/cierra el panel o la barra lateral
+    // (clases nopanel/noauxiliarybar del workbench), cambia la pestaña activa (checked), el grupo de
+    // editores activo (active) o el centro de notificaciones (visible). Así no hace falta sondear.
+    new MutationObserver(onBodyMutations).observe(document.body,
+      { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
     window.addEventListener('resize', schedule);
     // Cambio de tema: VS Code reescribe su <style> de colores en el <head>.
     new MutationObserver(() => { themeDirty = true; })
@@ -1203,13 +1209,17 @@
     const watchWorkbench = () => {
       const wb = document.querySelector('.monaco-workbench');
       if (!wb) return setTimeout(watchWorkbench, 500);
-      new MutationObserver(() => { themeDirty = true; schedule(); }).observe(wb, { attributes: true, attributeFilter: ['class'] });
+      new MutationObserver(() => { themeDirty = true; }).observe(wb, { attributes: true, attributeFilter: ['class'] });
     };
     watchWorkbench();
+    // Respaldo por si algún cambio no deja rastro en el DOM observado (p. ej. colores de
+    // workbench.colorCustomizations): cada 2 s, y los colores del tema cada ~6 s.
+    let tick = 0;
     setInterval(() => {
       if (document.hidden) return; // ventana minimizada u oculta: nada que refrescar
-      try { refreshToolWindows(); refreshRightStripe(); placeInspections(); } catch { /* ignore */ }
-    }, 400);
+      if (++tick >= 3) { tick = 0; themeDirty = true; }
+      schedule();
+    }, 2000);
     // Al volver a la ventana, refrescar enseguida en vez de esperar al siguiente tick.
     document.addEventListener('visibilitychange', () => { if (!document.hidden) { themeDirty = true; schedule(); } });
     schedule();
