@@ -66,9 +66,18 @@ function register(ctx) {
       .catch(e => console.error('[intellij-toolbar] moveViews outline', e));
   }
 
+  // Panel inferior a todo el ancho (debajo de las barras laterales), como las ventanas de abajo de IntelliJ.
+  // Solo una vez: si el usuario cambia la alineación (View → Panel Alignment), se respeta.
+  if (!ctx.globalState.get('ijt.panelJustify.v1')) {
+    Promise.resolve(vscode.commands.executeCommand('workbench.action.alignPanelJustify'))
+      .then(() => ctx.globalState.update('ijt.panelJustify.v1', true))
+      .catch(e => console.error('[intellij-toolbar] alignPanelJustify', e));
+  }
+
   // Git: la pestaña "MultiGit" del panel (contenedor multigit-panel); sin MultiGit, Source Control.
   const git = tw('ijt.tw.git', 'Git', 2, '$(source-control)', 'Git (⌘9)', 'workbench.view.extension.multigit-panel');
-  if (!vscode.extensions.getExtension('angelminga.multigit')) {
+  // MultiGit cambió de publisher (angelminga → angelminga-multigit): se aceptan ambos ids.
+  if (!['angelminga-multigit.multigit', 'angelminga.multigit'].some(id => vscode.extensions.getExtension(id))) {
     git.command = 'workbench.view.scm';
     git.tooltip = 'Source Control (⌘0)';
   }
@@ -85,7 +94,9 @@ function register(ctx) {
     tw('ijt.rw.inspector', 'Flutter Inspector', 12, '$(inspect)', 'Flutter Inspector (DevTools)', 'dart.openDevToolsInspector').show();
   }
   if (has('anthropic.claude-code')) {
-    tw('ijt.rw.ai', 'AI', 11, '$(sparkle)', 'Claude Code', 'claude-vscode.focus').show();
+    // En la barra lateral derecha (no en una pestaña del editor), como la ventana AI de IntelliJ: así el
+    // segundo clic la oculta (titlebar-inject.js cierra la barra auxiliar) y la conversación se conserva.
+    tw('ijt.rw.ai', 'AI', 11, '$(sparkle)', 'Claude Code', 'claude-vscode.sidebar.open').show();
   }
 
   // Widget de inspecciones (arriba a la derecha del editor, como IntelliJ): errores y warnings del archivo activo.

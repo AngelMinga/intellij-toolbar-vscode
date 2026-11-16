@@ -2,7 +2,7 @@
   "name": "intellij-toolbar",
   "displayName": "IntelliJ Toolbar",
   "description": "Barra estilo IntelliJ: proyectos recientes, menú de ramas, device Flutter, configuración, Run y Debug.",
-  "version": "0.12.0",
+  "version": "0.13.1",
   "publisher": "angelminga",
   "license": "MIT",
   "repository": {
