@@ -72,6 +72,11 @@
         "icon": "$(kebab-vertical)"
       },
       {
+        "command": "ijt.moreToolWindows",
+        "title": "More Tool Windows (IntelliJ Toolbar)",
+        "icon": "$(ellipsis)"
+      },
+      {
         "command": "ijt.settings",
         "title": "Ajustes (IntelliJ Toolbar)",
         "icon": "$(settings-gear)"

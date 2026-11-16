@@ -19,6 +19,10 @@
     { id: 'ijt.tw.todo', tabs: ['TODO'], tip: 'TODO' },
     { id: 'ijt.tw.git', tabs: ['MultiGit', 'Source Control'], tip: 'Git  ⌘9' }
   ];
+  // ⋮ "More Tool Windows": justo debajo de los íconos de arriba (Project, Commit, Structure…), como IntelliJ.
+  // Abre el menú de pins.js; lo que se elige ahí queda fijado en la columna (encima del ⋮). pins.js publica
+  // cuáles en el aria-label del ⋮: "[ijt-pins:<key>=<aria-label nativo>|…;<key>|…]" (ver pinState).
+  const MORE_TW = { id: 'ijt.tw.more', tip: 'More Tool Windows' };
   // Columna derecha de IntelliJ: franja vertical en el borde derecho de la ventana. VS Code se acomoda
   // dejándole RIGHT_STRIPE_W px (ver reserveRightStripe). `close`: op del puente para cerrar al pulsar lo activo.
   const RIGHT_STRIPE_W = 36;
@@ -155,6 +159,7 @@
     }
     .ijt-toolwindows .statusbar-item .codicon { font-size: 18px !important; }
     .ijt-toolwindows .statusbar-item:hover { background: var(--vscode-toolbar-hoverBackground) !important; color: var(--vscode-activityBar-foreground) !important; }
+    .ijt-toolwindows.ijt-tw-more { border-top: none; margin: 2px 0 0; padding: 0; }
     .ijt-toolwindows .statusbar-item.ijt-active {
       background: var(--vscode-toolbar-activeBackground, rgba(128,128,128,.25)) !important;
       color: var(--vscode-activityBar-foreground) !important;
@@ -213,7 +218,17 @@
       display: flex !important; flex-direction: column;
     }
     ${ACTIVITY_ORDER.map((names, i) => `${names.map(activityItem).join(', ')} { order: ${i - ACTIVITY_ORDER.length}; }`).join('\n    ')}
-    ${ACTIVITY_HIDDEN.map(activityItem).join(',\n    ')} { display: none !important; }
+    /* Los de ACTIVITY_HIDDEN se ocultan desde <style id="ijt-activity-hidden"> (ver applyActivityHidden): los
+       que se fijan desde el ⋮ vuelven a verse. */
+    .ijt-toolwindows .statusbar-item.ijt-dup { display: none !important; }
+    #ijt-ctx {
+      position: fixed; z-index: 2700; min-width: 170px; padding: 4px; border-radius: 6px;
+      background: var(--vscode-menu-background, #2B2D30); color: var(--vscode-menu-foreground, #DFE1E5);
+      border: 1px solid var(--vscode-menu-border, #43454A); box-shadow: 0 6px 18px var(--vscode-widget-shadow, rgba(0,0,0,.4));
+      font-size: 13px; -webkit-app-region: no-drag;
+    }
+    #ijt-ctx div { padding: 4px 10px; border-radius: 4px; cursor: pointer; white-space: nowrap; }
+    #ijt-ctx div:hover { background: var(--vscode-menu-selectionBackground, #2E436E); color: var(--vscode-menu-selectionForeground, inherit); }
 
     /* ---- Barra de estado como IntelliJ: "13:1" y "4 spaces" (statusbar.js) en lugar de "Ln 13, Col 1" y
        "Tab Size: 4"; sin el lenguaje ni su indicador {}. Solo si los de la extensión están (:has). */
@@ -542,6 +557,10 @@
     }
     const tw = ensureToolWindowsHost();
     if (tw) placeItems(tw, TOOL_WINDOWS.map(t => t.id));
+    const pins = pinState();
+    applyActivityHidden(pins);
+    const more = ensureMoreHost();
+    if (more) markDuplicatePins(placeItems(more, pins.items.map(k => 'ijt.pin.' + k).concat(MORE_TW.id)));
     const rs = ensureRightStripe();
     if (rs) placeItems(rs, RIGHT_ITEMS.map(r => r.id));
     placeInspections();
@@ -556,7 +575,8 @@
   // (lo coloca hacia arriba y, en la columna derecha, fuera de lugar) y se muestra uno al costado del ícono.
   let tipTimer = 0;
   function tipFor(item) {
-    const all = TOOL_WINDOWS.concat(RIGHT_ITEMS);
+    if (/\.ijt\.pin\./.test(item.id)) return item.getAttribute('aria-label') || '';
+    const all = TOOL_WINDOWS.concat(RIGHT_ITEMS, [MORE_TW]);
     const def = all.find(x => item.id.endsWith('.' + x.id));
     return def && def.tip;
   }
@@ -621,6 +641,122 @@
     return host;
   }
 
+  // Contenedor del ⋮ dentro de la lista de íconos de arriba (composite-bar), tras su barra de acciones:
+  // así queda pegado al último ícono visible. VS Code puede rehacer esa lista; sync() lo vuelve a poner.
+  function ensureMoreHost() {
+    const bar = document.querySelector('.part.activitybar > .content > .composite-bar');
+    if (!bar) return null;
+    let host = document.querySelector('.ijt-tw-more');
+    if (!host) {
+      host = document.createElement('div');
+      host.className = 'ijt-toolwindows ijt-tw-more';
+      host.addEventListener('mousedown', anchorBeside, true);
+      host.addEventListener('click', onPinClick, true);
+      wireTips(host, 'right');
+    }
+    if (host.parentElement !== bar || host !== bar.lastElementChild) bar.appendChild(host);
+    return host;
+  }
+
+  // Ventanas fijadas desde el ⋮ según su aria-label (lo escribe pins.js). natives: íconos de VS Code que se
+  // vuelven a mostrar ({ key, label }); items: claves de los items "ijt.pin.<key>".
+  let lastPinsLabel = null;
+  let lastPins = { natives: [], items: [] };
+  function pinState() {
+    const more = findItem(MORE_TW.id);
+    const s = (more && more.getAttribute('aria-label')) || '';
+    if (s === lastPinsLabel) return lastPins;
+    lastPinsLabel = s;
+    const m = s.match(/\[ijt-pins:([^;\]]*);([^\]]*)\]/);
+    const split = v => (v ? v.split('|').filter(Boolean) : []);
+    lastPins = m ? {
+      natives: split(m[1]).map(x => { const i = x.indexOf('='); return { key: x.slice(0, i), label: x.slice(i + 1) }; }),
+      items: split(m[2])
+    } : { natives: [], items: [] };
+    return lastPins;
+  }
+
+  // Oculta los íconos de ACTIVITY_HIDDEN menos los fijados (solo reescribe el <style> si cambia).
+  function applyActivityHidden(pins) {
+    const shown = new Set(pins.natives.map(n => n.label));
+    const hidden = ACTIVITY_HIDDEN.filter(l => !shown.has(l));
+    const css = hidden.length ? `${hidden.map(activityItem).join(',\n')} { display: none !important; }` : '';
+    let st = document.getElementById('ijt-activity-hidden');
+    if (!st) { st = document.createElement('style'); st.id = 'ijt-activity-hidden'; document.head.appendChild(st); }
+    if (st.textContent !== css) st.textContent = css;
+  }
+
+  // Un contenedor de extensión que ya tiene su ícono nativo visible en la columna no se repite.
+  function markDuplicatePins(items) {
+    for (const el of items) {
+      if (!/\.ijt\.pin\./.test(el.id)) continue;
+      const label = el.getAttribute('aria-label') || '';
+      const nat = label && document.querySelector(`${activityItem(label.replace(/"/g, '\\"'))}`);
+      const dup = !!(nat && nat.getClientRects().length);
+      if (el.classList.contains('ijt-dup') !== dup) el.classList.toggle('ijt-dup', dup);
+    }
+  }
+
+  // Ventana fijada ya abierta (panel o barra derecha): el click la cierra, como en IntelliJ.
+  function onPinClick(e) {
+    const item = e.target.closest && e.target.closest('.statusbar-item');
+    if (!item || !item.classList.contains('ijt-active') || !currentBridge()) return;
+    e.preventDefault();
+    e.stopPropagation();
+    sendBridgeOp(auxTitle().startsWith(item.getAttribute('aria-label') || '\u0000') ? 'closeAuxiliaryBar' : 'closePanel');
+  }
+
+  // Clic derecho sobre una fijada (item propio o ícono nativo vuelto a mostrar) → "Remove from Sidebar".
+  function pinKeyAt(target) {
+    const item = target.closest && target.closest('.ijt-tw-more .statusbar-item');
+    if (item) {
+      const m = item.id.match(/\.ijt\.pin\.(.+)$/);
+      return m ? m[1] : null;
+    }
+    const act = target.closest && target.closest('.part.activitybar .composite-bar .action-item');
+    const label = act && act.querySelector(':scope > .action-label');
+    const aria = (label && label.getAttribute('aria-label')) || '';
+    const n = pinState().natives.find(x => aria.startsWith(x.label));
+    return n ? n.key : null;
+  }
+  function closeCtx() {
+    const m = document.getElementById('ijt-ctx');
+    if (m) m.remove();
+  }
+  function onPinContextMenu(e) {
+    const key = pinKeyAt(e.target);
+    if (!key) return;
+    e.preventDefault();
+    e.stopPropagation();
+    hideTip();
+    closeCtx();
+    const menu = document.createElement('div');
+    menu.id = 'ijt-ctx';
+    const row = document.createElement('div');
+    row.textContent = 'Remove from Sidebar';
+    row.addEventListener('click', () => {
+      closeCtx();
+      callBridge('POST', '/action', { op: 'unpinToolWindow', key }).then(() => setTimeout(schedule, 100)).catch(() => {});
+    });
+    menu.appendChild(row);
+    document.body.appendChild(menu);
+    menu.style.left = Math.min(e.clientX, window.innerWidth - menu.offsetWidth - 8) + 'px';
+    menu.style.top = Math.min(e.clientY, window.innerHeight - menu.offsetHeight - 8) + 'px';
+    setTimeout(() => {
+      document.addEventListener('mousedown', ev => { if (!menu.contains(ev.target)) closeCtx(); }, { capture: true, once: true });
+    });
+  }
+
+  // El menú del ⋮ se abre a la derecha del botón (como el popup de IntelliJ), no arriba al centro.
+  function anchorBeside(e) {
+    const item = e.target.closest && e.target.closest('.statusbar-item');
+    if (!item) return;
+    const r = item.getBoundingClientRect();
+    const left = Math.round(r.right + 6);
+    anchor = { left, right: left, alignRight: false, top: Math.round(r.top), at: Date.now() };
+    pollForWidget();
+  }
+
   // Pestaña activa del panel inferior, o null si el panel está cerrado.
   function activePanelTab() {
     const panel = document.querySelector('.part.panel');
@@ -632,6 +768,12 @@
 
   function refreshToolWindows() {
     const tab = activePanelTab();
+    const aux = auxTitle();
+    for (const el of document.querySelectorAll('.ijt-tw-more .statusbar-item[id*=".ijt.pin."]')) {
+      const label = el.getAttribute('aria-label') || '';
+      const on = !!label && ((!!tab && tab.startsWith(label)) || aux.startsWith(label));
+      if (el.classList.contains('ijt-active') !== on) el.classList.toggle('ijt-active', on);
+    }
     for (const t of TOOL_WINDOWS) {
       const el = findItem(t.id);
       if (!el || !el.closest('.ijt-toolwindows')) continue;
@@ -1269,7 +1411,7 @@
   // y árboles (explorador, SCM… se re-renderizan al hacer scroll), las barras de scroll (cambian de clase al
   // aparecer/desvanecerse), los hovers, la lista del quick pick y nuestro propio menú de ramas no mueven nada
   // de lo nuestro: si todas las mutaciones vienen de ahí, no se re-sincroniza.
-  const NOISY = '.monaco-editor, .xterm, .monaco-list-rows, .scrollbar, .monaco-hover, .quick-input-list, .ijt-pop, .ijt-sub, #ijt-tooltip';
+  const NOISY = '.monaco-editor, .xterm, .monaco-list-rows, .scrollbar, .monaco-hover, .quick-input-list, .ijt-pop, .ijt-sub, #ijt-tooltip, #ijt-ctx';
   function onBodyMutations(records) {
     for (const r of records) {
       const t = r.target;
@@ -1284,6 +1426,9 @@
     new MutationObserver(onBodyMutations).observe(document.body,
       { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
     window.addEventListener('resize', schedule);
+    document.addEventListener('contextmenu', onPinContextMenu, true);
+    window.addEventListener('blur', closeCtx);
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeCtx(); }, true);
     // Cambio de tema: VS Code reescribe su <style> de colores en el <head>.
     new MutationObserver(() => { themeDirty = true; })
       .observe(document.head, { childList: true, subtree: true, characterData: true });

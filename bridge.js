@@ -172,6 +172,8 @@ const OPS = {
   // Columna de ventanas de herramientas: click sobre la ventana ya abierta la cierra (como IntelliJ).
   closePanel: () => vscode.commands.executeCommand('workbench.action.closePanel'),
   closeAuxiliaryBar: () => vscode.commands.executeCommand('workbench.action.closeAuxiliaryBar'),
+  // Clic derecho → "Remove from Sidebar" sobre una ventana fijada desde el ⋮ (pins.js).
+  unpinToolWindow: ({ key }) => require('./pins').unpin(String(key || '')),
 
   newBranch: async ({ ref, remote }) => {
     const repos = await targetRepos();

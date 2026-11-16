@@ -63,6 +63,8 @@ function activate(ctx) {
   const toolbar = require('./toolbar');
   toolbar.register(ctx);
   require('./statusbar').register(ctx);
+  // ⋮ More Tool Windows y las ventanas fijadas en la columna izquierda.
+  require('./pins').register(ctx);
 
   // En una sesión Dart/Flutter usa el comando de Flutter; en cualquier otra, el restart del debugger.
   const flutterOrRestart = cmd => () =>
