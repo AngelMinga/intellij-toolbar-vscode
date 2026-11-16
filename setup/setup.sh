@@ -115,13 +115,12 @@ pasos_finales() {
   cat <<EOF
 
 ────────────────────────────────────────────────────────────
- Pasos manuales (VS Code no permite automatizarlos):
-   1. Cmd+Shift+P → "Enable Custom CSS and JS"
-   2. Cerrar VS Code por completo (Cmd+Q) y volver a abrirlo
-   3. Si aparece "installation appears to be corrupt" → ⚙ → "Don't Show Again"
- Si macOS lo pide: Ajustes del Sistema → Privacidad y seguridad →
- Gestión de apps → activar Visual Studio Code.
- Tras cada actualización de VS Code repite los pasos 1 y 2.
+ Abre (o reinicia) VS Code: IntelliJ Toolbar activa sola la barra de
+ título (Custom CSS and JS) y te pide reiniciar → "Reiniciar VS Code".
+ Si aparece "installation appears to be corrupt" → ⚙ → "Don't Show Again".
+ Si macOS lo bloquea: Ajustes del Sistema → Privacidad y seguridad →
+ Gestión de apps → activar Visual Studio Code, y elige "Reintentar".
+ Tras cada actualización de VS Code se reactiva sola de la misma forma.
 ────────────────────────────────────────────────────────────
 EOF
 }

@@ -2,7 +2,7 @@
   "name": "intellij-toolbar",
   "displayName": "IntelliJ Toolbar",
   "description": "Barra estilo IntelliJ: proyectos recientes, menú de ramas, device Flutter, configuración, Run y Debug.",
-  "version": "0.13.2",
+  "version": "0.14.0",
   "publisher": "angelminga",
   "license": "MIT",
   "repository": {
@@ -129,6 +129,11 @@
     "configuration": {
       "title": "IntelliJ Toolbar",
       "properties": {
+        "intellijToolbar.autoEnableInjection": {
+          "type": "boolean",
+          "default": true,
+          "description": "Reactivar automáticamente la barra de título (Custom CSS and JS) cuando falta: en una instalación nueva o tras actualizar VS Code."
+        },
         "intellijToolbar.showBranch": {
           "type": "boolean",
           "default": true,

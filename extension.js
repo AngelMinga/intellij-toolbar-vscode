@@ -65,6 +65,8 @@ function activate(ctx) {
   require('./statusbar').register(ctx);
   // ⋮ More Tool Windows y las ventanas fijadas en la columna izquierda.
   require('./pins').register(ctx);
+  // Reactiva sola la inyección de la barra de título si una actualización de VS Code la borró.
+  require('./injection').register(ctx);
 
   // En una sesión Dart/Flutter usa el comando de Flutter; en cualquier otra, el restart del debugger.
   const flutterOrRestart = cmd => () =>

@@ -117,12 +117,9 @@ Opcional: si VS Code sigue mostrando su propia rama en la barra inferior, haz cl
 
 ## Después de cada actualización de VS Code
 
-Las actualizaciones borran la inyección y los botones vuelven a la barra inferior. Para recuperarlos:
-
-1. `Cmd+Shift+P` → **Enable Custom CSS and JS**
-2. `Cmd+Q` y volver a abrir.
-
-No hace falta volver a ejecutar `setup.sh`.
+Las actualizaciones borran la inyección. IntelliJ Toolbar la reactiva sola al arrancar y muestra
+**Reiniciar VS Code** (ver *Activación automática de la barra de título*). Si lo desactivaste:
+`Cmd+Shift+P` → **Enable Custom CSS and JS** y `Cmd+Q`.
 
 ## Cambiar el aspecto
 
@@ -169,7 +166,17 @@ git commit -am "chore: actualizar respaldo de VS Code" && git push
 
 ### Restaurar en una Mac nueva
 
-Requisitos: VS Code (con el comando `code` en el PATH), Git, Node.js y python3.
+**Una sola línea** (en la Terminal de la Mac nueva):
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/AngelMinga/intellij-toolbar-vscode/main/setup/bootstrap.sh | bash
+```
+
+`setup/bootstrap.sh` instala lo que falte (Command Line Tools de Xcode, Homebrew, VS Code, Node.js), clona
+`plugins-intellij` e `intellij-toolbar-vscode` en `~/IdeaProjects/` (o los actualiza si ya están) y ejecuta
+`setup.sh --restaurar`. Luego abre VS Code: la barra de título se activa sola y aparece **Reiniciar VS Code**.
+
+**Paso a paso** (lo mismo, a mano):
 
 ```bash
 mkdir -p ~/IdeaProjects && cd ~/IdeaProjects
@@ -186,7 +193,19 @@ El script:
 3. Copia `settings.json` y `keybindings.json` con las rutas de esa Mac (guarda antes una copia `*.bak-<fecha>` de los existentes).
 4. Instala Custom CSS and JS Loader.
 
-Luego: `Cmd+Shift+P` → **Enable Custom CSS and JS** y `Cmd+Q`.
-
 `--solo-config` restaura solo settings y atajos. Ojo: `java.import.gradle.java.home` apunta a la versión de Java instalada con Homebrew; si en la Mac nueva es otra, ajústala.
 
+### Activación automática de la barra de título
+
+Al arrancar, IntelliJ Toolbar comprueba si la inyección de `titlebar-inject.js` está en VS Code. Si falta
+(instalación nueva o VS Code actualizado), ejecuta **Enable Custom CSS and JS** por su cuenta y muestra
+**Reiniciar VS Code**, que cierra y vuelve a abrir VS Code. Lo intenta una vez por versión de VS Code; si
+macOS lo bloquea, avisa con un botón **Reintentar**.
+
+Para desactivarlo: `"intellijToolbar.autoEnableInjection": false`.
+
+### Settings Sync (opcional)
+
+VS Code puede sincronizar settings, atajos y extensiones del Marketplace con tu cuenta de GitHub:
+⚙ → **Backup and Sync Settings…**. Las extensiones propias no se sincronizan (no están en el Marketplace);
+de eso se encarga `bootstrap.sh`.
