@@ -16,7 +16,7 @@
             "source.organizeImports": "explicit"
         }
     },
-    "claudeCode.preferredLocation": "panel",
+    "claudeCode.preferredLocation": "sidebar",
     "editor.linkedEditing": true,
     "editor.wordWrapColumn": 120,
     "editor.fontLigatures": true,
@@ -179,5 +179,10 @@
     "dart.previewFlutterUiGuidesCustomTracking": true,
     // Todo Tree busca ripgrep en la ruta antigua de VS Code (@vscode/ripgrep); ahora viene en @vscode/ripgrep-universal
     "todo-tree.ripgrep.ripgrep": "/Applications/Visual Studio Code.app/Contents/Resources/app/node_modules.asar.unpacked/@vscode/ripgrep-universal/bin/{{RG_ARCH}}/rg",
-    "workbench.colorTheme": "Islands Dark (código VS Code)"
+    "workbench.colorTheme": "Islands Dark (código VS Code)",
+    "multigit.warnBranchMismatch": false,
+    "multigit.favoriteBranches": ["develop", "production-lt"],
+    // Botones del título de las vistas (pull, push, fetch…) siempre visibles, no solo al pasar el ratón
+    "workbench.view.alwaysShowHeaderActions": true,
+    "claudeCommit.language": "Spanish"
 }

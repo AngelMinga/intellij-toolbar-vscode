@@ -3,7 +3,7 @@
   "extensions": [
     { "id": "angelminga.intellij-toolbar", "dir": "intellij-toolbar-vscode", "repo": "https://github.com/AngelMinga/intellij-toolbar-vscode.git" },
     { "id": "angelminga.run-configurations", "dir": "run-config", "repo": "https://github.com/AngelMinga/run-config.git" },
-    { "id": "angelminga.multigit", "dir": "MultiGit", "repo": "https://github.com/AngelMinga/MultiGit.git" },
+    { "id": "angelminga-multigit.multigit", "dir": "MultiGit", "repo": "https://github.com/AngelMinga/MultiGit.git" },
     { "id": "angelminga.phonepane", "dir": "PhonePane", "repo": "https://github.com/AngelMinga/PhonePane.git" },
     { "id": "angelminga.commit-messages-for-claude-code", "dir": "claude-commit-vscode", "repo": null }
   ]
