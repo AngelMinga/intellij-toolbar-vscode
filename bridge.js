@@ -341,11 +341,41 @@ function start(ctx, branchItem) {
   });
 
   server.on('error', e => console.error('[intellij-toolbar] bridge', e));
+  let port;
+  // Con MultiGit instalado, el botón de rama abre su popup (los repos que detecta MultiGit, Smart Checkout,
+  // Align…): sin "[ijt:puerto:token]" la barra inyectada no abre el popup propio y VS Code ejecuta el comando.
+  const applyMode = () => {
+    if (useMultiGit()) {
+      branchItem.command = MULTIGIT_POPUP;
+      branchItem.tooltip = 'Ramas y acciones Git (MultiGit)';
+      branchItem.accessibilityInformation = { label: 'Ramas y acciones Git (MultiGit)', role: 'button' };
+      return;
+    }
+    branchItem.command = 'ijt.branch';
+    branchItem.tooltip = 'Ramas y acciones Git';
+    if (port) branchItem.accessibilityInformation = { label: `Ramas y acciones Git [ijt:${port}:${token}]`, role: 'button' };
+  };
   server.listen(0, '127.0.0.1', () => {
-    const { port } = server.address();
-    branchItem.accessibilityInformation = { label: `Ramas y acciones Git [ijt:${port}:${token}]`, role: 'button' };
+    ({ port } = server.address());
+    applyMode();
   });
-  ctx.subscriptions.push({ dispose: () => server.close() });
+  applyMode();
+  ctx.subscriptions.push(
+    { dispose: () => server.close() },
+    vscode.extensions.onDidChange(applyMode),
+    vscode.workspace.onDidChangeConfiguration(e => { if (e.affectsConfiguration('intellijToolbar.useMultiGitBranchPopup')) applyMode(); }),
+  );
+}
+
+// ---- MultiGit
+
+const MULTIGIT_IDS = ['angelminga-multigit.multigit', 'angelminga.multigit'];
+const MULTIGIT_POPUP = 'multigit.branches';
+
+/** ¿Usar el popup de ramas de MultiGit? Si está instalado y el ajuste no lo desactiva. */
+function useMultiGit() {
+  if (!vscode.workspace.getConfiguration('intellijToolbar').get('useMultiGitBranchPopup', true)) return false;
+  return MULTIGIT_IDS.some(id => vscode.extensions.getExtension(id));
 }
 
 module.exports = { start };

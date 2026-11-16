@@ -4,6 +4,7 @@ Barra superior de VS Code al estilo IntelliJ IDEA (macOS):
 
 - **Izquierda:** proyecto (`FA fintech_app ⌄`, proyectos recientes) y rama (`⎇ rama ⌄`), con un menú de ramas propio: carpetas plegables en *Recent / Local / Remote* y un submenú a un lado por rama (Checkout, New Branch from, Rebase, Merge, Compare, Pull, Delete…).
   Con varios repositorios abiertos, las operaciones de rama (Checkout, New Branch, Merge, Rebase, Pull, Delete, Update Project) se aplican en todos los que tengan la rama, como IntelliJ (`intellijToolbar.syncBranchOperations`).
+  Si tienes instalada la extensión **MultiGit**, el botón de rama abre su popup de ramas (todos los repositorios que detecta MultiGit, *Smart Checkout* cuando hay cambios locales, *Align*…); se desactiva con `intellijToolbar.useMultiGitBranchPopup`.
 - **Derecha:** device, configuración, Run, Debug y Stop (de la extensión [run-configurations](https://github.com/AngelMinga/run-config)), más Hot Reload, Hot Restart, `⋮` (DevTools, Get Packages, Clean…) una lupa 🔍 que abre el buscador de VS Code (Go to File, comandos, texto…) y un ⚙ con Settings, Keymap, Plugins y Theme. El buscador del centro de la barra se oculta.
 - **Abajo a la izquierda:** columna de ventanas de herramientas (Run, Terminal, Output, Problems, TODO, Git) al pie de la barra de actividad; la abierta queda resaltada y un clic sobre ella cierra el panel.
 - **Derecha (columna):** Notifications, Running Devices (PhonePane), Flutter Inspector y AI (Claude Code), en una franja vertical como la de IntelliJ.

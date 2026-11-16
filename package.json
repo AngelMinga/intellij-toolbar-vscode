@@ -2,7 +2,7 @@
   "name": "intellij-toolbar",
   "displayName": "IntelliJ Toolbar",
   "description": "Barra estilo IntelliJ: proyectos recientes, menú de ramas, device Flutter, configuración, Run y Debug.",
-  "version": "0.14.0",
+  "version": "0.15.0",
   "publisher": "angelminga",
   "license": "MIT",
   "repository": {
@@ -153,6 +153,11 @@
           "type": "boolean",
           "default": true,
           "description": "Con varios repositorios abiertos, aplicar las operaciones de rama (Checkout, New Branch, Merge, Rebase, Pull, Delete, Update Project) en todos los que tengan la rama, como IntelliJ (Execute branch operations on all roots)."
+        },
+        "intellijToolbar.useMultiGitBranchPopup": {
+          "type": "boolean",
+          "default": true,
+          "description": "Si la extensión MultiGit está instalada, el botón de rama de la barra de título abre el popup de ramas de MultiGit (todos los repositorios que detecta, Smart Checkout con cambios locales, Align…) en lugar del propio."
         }
       }
     },
